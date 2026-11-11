@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Budge It: try to balance the US federal budget, and see who it touches.">
+  <title>Budge It</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231f5e47'/%3E%3Ctext x='16' y='22' font-size='18' font-family='Georgia,serif' font-weight='700' text-anchor='middle' fill='%23fff'%3E$%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#controls">Skip to the budget controls</a>
+  <noscript><p class="noscript">Budge It needs JavaScript turned on to run the budget model.</p></noscript>
+
+  <div id="app" class="app" hidden>
+    <header class="scoreboard" id="scoreboard" aria-label="Scoreboard">
+      <div class="sb-inner">
+        <div class="sb-brand">
+          <span class="sb-logo" aria-hidden="true">$</span>
+          <span class="sb-title">Budge It</span>
+          <button type="button" class="sb-help" id="helpBtn" aria-label="How to play">?</button>
+        </div>
+        <div class="sb-hero">
+          <span class="sb-hero-label" id="deficitLabel">Deficit this year</span>
+          <output class="sb-hero-num" id="deficitValue" aria-live="polite">—</output>
+          <span class="sb-hero-sub" id="deficitSub"></span>
+        </div>
+        <div class="sb-gauge">
+          <div class="gauge" id="gauge" role="meter" aria-label="Progress toward a balanced budget" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="gauge-fill" id="gaugeFill"></div>
+            <span class="gauge-goal" aria-hidden="true">Balanced</span>
+          </div>
+          <span class="gauge-text" id="gaugeText"></span>
+        </div>
+        <dl class="sb-stats">
+          <div class="sb-stat"><dt>Money in</dt><dd id="statIn">—</dd></div>
+          <div class="sb-stat"><dt>Money out</dt><dd id="statOut">—</dd></div>
+          <div class="sb-stat"><dt>Approval</dt><dd id="statApproval">—</dd></div>
+          <div class="sb-stat"><dt>Jobs</dt><dd id="statJobs">—</dd></div>
+        </dl>
+      </div>
+    </header>
+
+    <section class="flow" id="flow" aria-labelledby="flowTitle">
+      <div class="flow-head">
+        <h2 id="flowTitle">Where the money comes from and where it goes</h2>
+        <p class="flow-hint">Tap a block to jump to its controls.</p>
+      </div>
+      <div class="flow-row">
+        <span class="flow-label">Money in</span>
+        <div class="flow-bar" id="flowIn"></div>
+      </div>
+      <div class="flow-row">
+        <span class="flow-label">Money out</span>
+        <div class="flow-bar" id="flowOut"></div>
+      </div>
+      <ul class="flow-legend" id="flowLegend"></ul>
+    </section>
+
+    <main class="layout" id="layout" data-view="controls">
+      <section class="col col-controls" id="controls" aria-label="Budget controls">
+        <div class="tabs" role="tablist" aria-label="Budget side">
+          <button type="button" role="tab" id="tabSpending" aria-controls="panelSpending" aria-selected="true">Spending</button>
+          <button type="button" role="tab" id="tabRevenue" aria-controls="panelRevenue" aria-selected="false" tabindex="-1">Taxes &amp; revenue</button>
+        </div>
+        <div role="tabpanel" id="panelSpending" aria-labelledby="tabSpending">
+          <div class="chips" id="groupChips" role="group" aria-label="Filter spending by type"></div>
+          <div class="cards" id="spendingCards"></div>
+        </div>
+        <div role="tabpanel" id="panelRevenue" aria-labelledby="tabRevenue" hidden>
+          <div class="cards" id="revenueCards"></div>
+        </div>
+      </section>
+
+      <section class="col col-effects" id="effects" aria-label="Consequences">
+        <article class="paper" id="frontPage" aria-labelledby="mastName">
+          <div class="paper-mast">
+            <span class="paper-name" id="mastName">The Daily Ledger</span>
+            <span class="paper-date" id="mastDate"></span>
+          </div>
+          <h2 class="paper-headline" id="headline" aria-live="polite"></h2>
+          <div class="paper-stories">
+            <h3 class="paper-kicker">What just happened</h3>
+            <ul id="storyList"></ul>
+          </div>
+        </article>
+
+        <section class="panel" aria-labelledby="kitchenTitle">
+          <h2 class="panel-title" id="kitchenTitle">Around the kitchen table</h2>
+          <p class="panel-sub">How your plan changes each household's year, in dollars.</p>
+          <div class="personas" id="personas"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="approvalTitle">
+          <h2 class="panel-title" id="approvalTitle">What voters think</h2>
+          <div class="approval-overall" id="approvalOverall"></div>
+          <div class="blocs" id="blocs"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="nationTitle">
+          <h2 class="panel-title" id="nationTitle">The country</h2>
+          <div class="metrics" id="metrics"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="outlookTitle">
+          <h2 class="panel-title" id="outlookTitle">Debt over the next ten years</h2>
+          <p class="panel-sub">Debt held by the public, as a share of the economy.</p>
+          <div class="chart" id="chart"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="planTitle">
+          <h2 class="panel-title" id="planTitle">Your plan</h2>
+          <div class="plan-totals" id="planTotals"></div>
+          <ol class="plan-list" id="planList"></ol>
+          <div class="plan-actions">
+            <button type="button" class="btn btn-primary" id="shareBtn">Copy share link</button>
+            <button type="button" class="btn" id="resetAllBtn">Start over</button>
+          </div>
+          <div class="share-out" id="shareOut" hidden>
+            <label for="shareUrl">Share link</label>
+            <input type="text" id="shareUrl" readonly>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="challengeTitle">
+          <h2 class="panel-title" id="challengeTitle">Challenges</h2>
+          <label class="challenge-pick" for="challengeSelect">Play with a rule</label>
+          <select id="challengeSelect"></select>
+          <div class="challenge-body" id="challengeBody"></div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="about" id="about" aria-labelledby="aboutTitle">
+      <h2 id="aboutTitle">About the numbers</h2>
+      <div class="about-grid">
+        <div>
+          <h3>How this model works</h3>
+          <p id="aboutModel"></p>
+          <h3>What it leaves out</h3>
+          <ul id="caveats"></ul>
+        </div>
+        <div>
+          <h3>Sources</h3>
+          <ul id="sources" class="sources"></ul>
+        </div>
+      </div>
+    </footer>
+
+    <nav class="mobile-nav" aria-label="Switch view">
+      <button type="button" id="viewControls" aria-pressed="true">Choices</button>
+      <button type="button" id="viewEffects" aria-pressed="false">Consequences <span class="mobile-nav-badge" id="mobileBadge"></span></button>
+    </nav>
+
+    <dialog class="modal" id="introDialog" aria-labelledby="introTitle">
+      <form method="dialog" class="modal-body">
+        <h2 id="introTitle">You have the federal checkbook</h2>
+        <p id="introLead"></p>
+        <ol class="intro-steps">
+          <li>Move the sliders to cut or grow each part of the budget, and flip switches for specific reforms.</li>
+          <li>Raise or lower taxes under <strong>Taxes &amp; revenue</strong>.</li>
+          <li>Watch the households, voters and the economy react as you go.</li>
+          <li>Get the deficit to zero. Then see how your plan grades out.</li>
+        </ol>
+        <p class="modal-note">It's a simplified model built on published estimates. Details are in "About the numbers" at the bottom.</p>
+        <button class="btn btn-primary" value="ok">Start balancing</button>
+      </form>
+    </dialog>
+
+    <dialog class="modal modal-win" id="winDialog" aria-labelledby="winTitle">
+      <form method="dialog" class="modal-body">
+        <p class="win-stamp" aria-hidden="true">Balanced</p>
+        <h2 id="winTitle">You balanced the budget</h2>
+        <p id="winLead"></p>
+        <div class="report" id="report"></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" value="ok">Keep tinkering</button>
+          <button type="button" class="btn" id="winShare">Copy share link</button>
+        </div>
+      </form>
+    </dialog>
+    <div class="confetti" id="confetti" aria-hidden="true"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+
+  <div id="errorPanel" class="error-panel" hidden></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
