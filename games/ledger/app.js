@@ -52,8 +52,8 @@
     set(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } }
   };
 
-  if (!M) { showErrors('The budget model did not load', ['js/model.js failed to load.']); return; }
-  if (!D) { showErrors('The budget data did not load', ['js/data.js is missing or did not define BUDGET_DATA.']); return; }
+  if (!M) { showErrors('The budget model did not load', ['shared/model.js failed to load.']); return; }
+  if (!D) { showErrors('The budget data did not load', ['shared/data.js is missing or did not define BUDGET_DATA.']); return; }
   const errors = M.validateData(D);
   if (errors.length) { showErrors('The budget data has problems', errors); return; }
 

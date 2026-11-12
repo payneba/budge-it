@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const M = require(path.join(__dirname, '..', 'js', 'model.js'));
+const M = require(path.join(__dirname, '..', 'shared', 'model.js'));
 const FIXTURE = require(path.join(__dirname, 'fixture-data.js'));
 
 const clone = (x) => JSON.parse(JSON.stringify(x));

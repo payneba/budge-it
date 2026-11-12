@@ -1,33 +1,45 @@
-# Budge It — US federal budget balancing game
+# Budge It — US federal budget games
 
-A browser game: the player sees where federal money comes from and where it goes,
-adjusts spending and taxes, and tries to bring the deficit to zero. Consequences are
-shown in human terms (specific households, people covered, jobs, voter reaction),
-not just dollar totals. Realistic, sourced numbers; entertaining presentation.
+A collection of browser games and demos about balancing the US federal budget. They
+share one sourced dataset and one calculation engine, and each explores a different
+way of showing the player where the money goes and what changing it does to real
+people. There is no single definitive version: new games are added side by side
+under `games/`, and may be experiments.
 
 ## Hard constraints
 
-- Static site, no build step, no install, no server. Must work by double-clicking
-  `index.html` (file:// URL) **and** when hosted on GitHub Pages.
+- Static site, no build step, no install, no server. Every game must work by
+  double-clicking its `index.html` (file:// URL) **and** when hosted on GitHub Pages.
   - Therefore: classic `<script src>` tags only. No ES modules, no fetch() of local
-    files, no bundler, no npm dependencies at runtime, no CDN requirement (the game
-    must work offline; charts are hand-rolled SVG/CSS).
+    files, no bundler, no npm dependencies at runtime, no CDN requirement (games
+    must work offline; charts and graphics are hand-rolled SVG/CSS/canvas).
 - Vanilla JS, HTML, CSS. Unix line endings. No frameworks.
 - Tests run with `node --test tests/` (Node 24, built-in test runner, zero deps).
+  `tests/index.js` loads every `*.test.js` beside it.
 - Git: do NOT commit or push; the orchestrator commits. Never prefix shell commands
   with `cd <dir> &&` — the shell is already at the repo root.
 
-## Files
+## Layout
 
-| File | Owner | Purpose |
-|------|-------|---------|
-| `index.html` | UI | Page shell, loads the scripts below in order |
-| `css/style.css` | UI | All styling |
-| `js/data.js` | Content | ALL numbers and words: `BUDGET_DATA` (schema below) |
-| `js/model.js` | Engine | Pure calculation + `validateData`. No DOM access. |
-| `js/app.js` | UI | Rendering, interaction, state, URL share codes |
-| `tests/*.test.js` | Engine | node:test suites for model + real-data validation |
-| `README.md` | — | What it is, how to play/run/test, data sources, model caveats |
+| Path | Purpose |
+|------|---------|
+| `index.html` | Landing page: one card per game, linking to `games/<name>/index.html` |
+| `shared/data.js` | `BUDGET_DATA`: every budget number and policy text (schema below). Shared by all games. |
+| `shared/model.js` | `BudgetModel`: pure budget calculation + `validateData`. No DOM access. Shared by all games. |
+| `games/<name>/` | One self-contained game: its own `index.html`, scripts, styles, and any game-specific data. Loads shared files as `../../shared/...`. |
+| `games/ledger/` | "The Ledger": the original dashboard game (`index.html`, `app.js`, `style.css`) |
+| `tests/*.test.js` | node:test suites: shared model, real-data validation, and per-game pure logic |
+| `README.md` | What this is, the list of games, how to run/test, data sources, model caveats |
+
+Rules for adding a game:
+- Put it in `games/<name>/` and add a card for it to the root `index.html` and a
+  row to the README's game list.
+- Do not fork `shared/data.js` or `shared/model.js`. Game-specific content and logic
+  live in the game's folder; changes to shared files must keep every existing game
+  and all tests working.
+- Keep any game logic worth testing in a DOM-free file that loads in Node (same
+  wrapper as below) with tests in `tests/<name>*.test.js`.
+- Use a game-specific localStorage key prefix so games do not clobber each other.
 
 `data.js` and `model.js` must load both in the browser and in Node:
 
@@ -41,7 +53,7 @@ not just dollar totals. Realistic, sourced numbers; entertaining presentation.
 
 `model.js` exposes `BudgetModel` the same way.
 
-**The engine is generic.** `model.js`/`app.js` must never hard-code a category id,
+**The engine is generic.** `shared/model.js` and game code must never hard-code a category id,
 lever id, persona id, dollar figure or piece of policy text. Everything
 content-specific lives in `data.js`. Adding a lever to `data.js` must make it appear
 in the game with no code change.

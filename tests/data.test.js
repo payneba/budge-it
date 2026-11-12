@@ -5,8 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const M = require(path.join(__dirname, '..', 'js', 'model.js'));
-const DATA_PATH = path.join(__dirname, '..', 'js', 'data.js');
+const M = require(path.join(__dirname, '..', 'shared', 'model.js'));
+const DATA_PATH = path.join(__dirname, '..', 'shared', 'data.js');
 const exists = fs.existsSync(DATA_PATH);
 const skip = exists ? false : 'js/data.js not present yet';
 const data = exists ? require(DATA_PATH) : null;

@@ -1,17 +1,25 @@
 # Budge It
 
-A browser game about balancing the US federal budget. You see where federal money
-comes from and where it goes, then cut, grow, tax and reform until the deficit hits
-zero. Every move shows up in human terms: what it does to a handful of specific
-households, to voter blocs, to jobs and to the country's debt over ten years.
+A collection of browser games about balancing the US federal budget. You see where
+federal money comes from and where it goes, then cut, grow, tax and reform until the
+deficit hits zero, and each game shows what your choices do to real people in a
+different way. The games share one sourced dataset and one calculation engine.
 
 The numbers come from published sources (CBO, OMB, Treasury, JCT and others); the
 model that combines them is deliberately simple. See "Model simplifications" below.
 
-## Play
+## Games
 
-Open `index.html` in a browser. That's it: no install, no build, no server, works
-offline. It also works unchanged when hosted on GitHub Pages.
+Open `index.html` in a browser and pick one. No install, no build, no server; works
+offline, and unchanged when hosted on GitHub Pages.
+
+| Game | Folder | What it is |
+|------|--------|------------|
+| The Ledger | `games/ledger/` | Dashboard: every budget line and tax lever, eight example households, voter blocs, three scorecards, ten-year debt outlook |
+
+New games go side by side in `games/<name>/`; see `CLAUDE.md` for the rules.
+
+## The Ledger: how to play
 
 - **Spending** tab: one card per budget line. The main slider grows or cuts the whole
   line by a percentage; "Specific reforms" underneath are targeted policy changes.
@@ -57,27 +65,28 @@ node --test tests/
 
 Node 24 or later, no dependencies. `tests/model.test.js` checks the engine against a
 small invented dataset (`tests/fixture-data.js`). `tests/data.test.js` checks the real
-`js/data.js`: it must validate, compute finite numbers everywhere, start with a
+`shared/data.js`: it must validate, compute finite numbers everywhere, start with a
 deficit, and be winnable (including the lens challenges, using plans found by search).
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Page shell; loads the three scripts below with classic `<script>` tags |
-| `css/style.css` | All styling (light and dark, phone to desktop) |
-| `js/data.js` | `BUDGET_DATA`: every number and every word of content |
-| `js/model.js` | `BudgetModel`: pure calculation, validation, share codes, formatting |
-| `js/app.js` | Builds the page from the data and updates it as you play |
+| `index.html` | Landing page listing the games |
+| `games/ledger/index.html` | The Ledger's page shell; loads the three scripts below with classic `<script>` tags |
+| `games/ledger/style.css` | All styling (light and dark, phone to desktop) |
+| `shared/data.js` | `BUDGET_DATA`: every number and every word of content |
+| `shared/model.js` | `BudgetModel`: pure calculation, validation, share codes, formatting |
+| `games/ledger/app.js` | Builds the page from the data and updates it as you play |
 | `tests/` | `node:test` suites, the fixture dataset, and `index.js` (lets `node --test tests/` find the suites) |
 | `CLAUDE.md` | The data schema and engine contract |
 
 The engine and UI are generic: no category, lever, persona or figure is hard-coded.
-Everything comes from `js/data.js`.
+Everything comes from `shared/data.js`.
 
 ## Adding or editing a lever
 
-Add an object to `levers` in `js/data.js`. It appears under the card named by its
+Add an object to `levers` in `shared/data.js`. It appears under the card named by its
 `parent` with no code change.
 
 ```js
@@ -128,6 +137,6 @@ The full schema is in `CLAUDE.md`.
 
 ## Data sources
 
-All sources are listed in `meta.sources` in `js/data.js`, with the caveats in
+All sources are listed in `meta.sources` in `shared/data.js`, with the caveats in
 `meta.caveats`. Both are shown in the game in the "About the numbers" section at the
 bottom of the page.
