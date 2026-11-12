@@ -1565,7 +1565,7 @@
       { id: "research_grants", name: "New federal research grants per year", icon: "🔬", baseline: 20000, goodDirection: "up", format: "number", min: 0 },
       { id: "gas_price", name: "Average gas price ($/gallon)", icon: "⛽", baseline: 3.10, goodDirection: "down", format: "dollars", min: 0 },
       { id: "avg_household_tax", name: "Average federal taxes per household", icon: "🧾", baseline: 40600, goodDirection: "down", format: "dollars", min: 0 },
-      { id: "ss_depletion_year", name: "Year Social Security's trust funds run dry", icon: "⏳", baseline: 2034, goodDirection: "up", format: "number" },
+      { id: "ss_depletion_year", name: "Year Social Security's trust funds run dry", icon: "⏳", baseline: 2034, goodDirection: "up", format: "year" },
       { id: "co2_emissions", name: "US carbon emissions (million tons a year)", icon: "🏭", baseline: 4800, goodDirection: "down", format: "number", min: 0 }
     ],
 

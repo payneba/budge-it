@@ -155,7 +155,7 @@ are annual, "fully phased in", at the scale of the baseline fiscal year.
     id: "uninsured", name: "People without health insurance", icon: "🏥",
     baseline: 27e6,
     goodDirection: "down",               // "down" | "up": which direction is good for people
-    format: "people",                    // "people" | "jobs" | "dollars" | "percent" | "number"
+    format: "people",                    // "people" | "jobs" | "dollars" | "percent" | "number" | "year" (calendar year, no comma)
     min: 0                               // optional clamp
   }],
 

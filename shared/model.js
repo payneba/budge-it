@@ -4,7 +4,7 @@
   'use strict';
 
   const GROUPS = ['mandatory', 'defense', 'nondefense', 'interest'];
-  const FORMATS = ['people', 'jobs', 'dollars', 'percent', 'number'];
+  const FORMATS = ['people', 'jobs', 'dollars', 'percent', 'number', 'year'];
   const OPS = ['<=', '>=', '<', '>', '=='];
   const STATS = ['deficit', 'approval', 'gdpPct', 'jobs', 'fairness', 'hardship', 'brink'];
   const RULE_KEYS = ['noTaxIncreases', 'noSpendingCuts', 'protect', 'minApproval', 'maxUnemploymentJobsLost', 'minFairness', 'maxHardship'];
@@ -742,10 +742,16 @@
         case 'people': case 'jobs': return format.people(x);
         case 'dollars': return format.bigDollars(x);
         case 'percent': return format.percent(x);
+        case 'year': return String(Math.round(x));   // a calendar year: no thousands comma
         default: return format.number(x);
       }
     },
     signedMetric(x, fmt) {
+      if (fmt === 'year') {   // a change in a year is a number of years
+        const n = Math.round(Math.abs(x) * 10) / 10;
+        if (!n) return '0 years';
+        return (x > 0 ? '+' : MINUS) + n + (n === 1 ? ' year' : ' years');
+      }
       const s = format.metric(x, fmt);
       return x > 0 && /[1-9]/.test(s) ? '+' + s : s;
     }

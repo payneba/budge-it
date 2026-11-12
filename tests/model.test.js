@@ -617,3 +617,12 @@ test('headline "all" combines simple conditions', () => {
   bad.headlines[bad.headlines.length - 1].when = { all: [{ stat: 'vibes', op: '>=', value: 1 }] };
   assert.ok(M.validateData(bad).some((e) => /vibes/.test(e)));
 });
+
+test('format: a year metric has no thousands comma and its change reads in years', () => {
+  assert.equal(M.format.metric(2034, 'year'), '2034');
+  assert.equal(M.format.metric(2036.4, 'year'), '2036');
+  assert.equal(M.format.signedMetric(3, 'year'), '+3 years');
+  assert.equal(M.format.signedMetric(1, 'year'), '+1 year');
+  assert.match(M.format.signedMetric(-2, 'year'), /^.2 years$/);
+  assert.equal(M.format.metric(4800, 'number'), '4,800');
+});
