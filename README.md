@@ -1,95 +1,135 @@
 # Budge It
 
-A collection of browser games about balancing the US federal budget. You see where
-federal money comes from and where it goes, then cut, grow, tax and reform until the
-deficit hits zero, and each game shows what your choices do to real people in a
-different way. The games share one sourced dataset and one calculation engine.
+**Can you balance the US federal budget, and who pays when you do?**
 
-The numbers come from published sources (CBO, OMB, Treasury, JCT and others); the
-model that combines them is deliberately simple. See "Model simplifications" below.
+The federal government spends about $2 trillion a year more than it takes in. Budge It
+is a small collection of browser games that hand you every spending line and tax lever
+and let you close the gap yourself, then show what your plan does to real people. Same
+real numbers in every game; a different way of looking at them in each.
 
-## Games
+No install, no build, no account, no tracking. It is plain HTML and JavaScript that
+runs offline.
 
-Open `index.html` in a browser and pick one. No install, no build, no server; works
-offline, and unchanged when hosted on GitHub Pages.
+![The Crowd: 260 figures on the National Mall reacting to a budget plan](docs/crowd.jpg)
 
-| Game | Folder | What it is |
-|------|--------|------------|
-| The Ledger | `games/ledger/` | Dashboard: every budget line and tax lever, eight example households, voter blocs, three scorecards, ten-year debt outlook |
-| The Crowd | `games/crowd/` | A crowd of 260 little people on the National Mall, each standing for about a million adults, who cheer, frown, protest or grab torches as you change the budget, and say why |
+## Play
 
-New games go side by side in `games/<name>/`; see `CLAUDE.md` for the rules.
+Download or clone the repo and open `index.html` in a browser, then pick a game.
 
-## The Ledger: how to play
+```sh
+git clone https://github.com/payneba/budge-it.git
+# then open budge-it/index.html
+```
 
-- **Spending** tab: one card per budget line. The main slider grows or cuts the whole
-  line by a percentage; "Specific reforms" underneath are targeted policy changes.
-- **Taxes & revenue** tab: each revenue source with its tax options (rates as
-  sliders, reforms as switches). A gold tick on a slider marks current law.
-- The right-hand column (the "Consequences" tab on phones) shows the front page,
-  household gains and losses, voter approval, national outcomes, the ten-year debt
-  outlook, your ranked plan and the optional challenges.
-- Click any block in the "money in / money out" bars to jump to its controls.
-- **Copy share link** puts your plan in the URL (`index.html#id:value,...`). Your
-  latest plan is also kept in the browser's local storage.
+## The games
+
+### The Crowd (`games/crowd/`)
+
+260 little people stand on the National Mall, each representing about a million
+American adults: retirees, nurses, students, farmers, soldiers, welders at defense
+plants, postdocs, small-business owners. Move a slider and they react. The content
+picnic at the back; the unhappy pick up signs and gather at the Capitol steps; the
+furious bring torches and pitchforks.
+
+- Hover anyone to hear what they are reacting to, in their own words and with real
+  numbers ("$230 a month less from my Social Security check").
+- Click anyone for everything on their mind and a link to the control that caused it.
+- Regroup the crowd by mood, by who they are, by age, by income, or by top gripe.
+- People react to more than their own wallet: lost coverage, a job that depends on a
+  budget line, and worries with no price tag, such as national security, their kids'
+  future, the climate, and the national debt itself.
+
+How the simulation works, and what is sourced versus estimated, is in
+[games/crowd/README.md](games/crowd/README.md).
+
+### The Ledger (`games/ledger/`)
+
+The full dashboard: every budget line and tax option as a card with facts and
+consequences, a money-in / money-out bar, eight example households around the kitchen
+table, voter blocs, a newspaper front page that reacts to your plan, a ten-year debt
+outlook, challenges ("no new taxes", "don't touch Social Security or Medicare"), and
+shareable plan links.
+
+![The Ledger: budget dashboard with a reacting newspaper front page](docs/ledger.jpg)
 
 ## Three ways to keep score
 
-How people take your plan is scored three ways, side by side, because each is a
-legitimate thing to optimize and they pull against each other:
+There is no single right answer to "how did people take it", so the games score a
+plan three ways, side by side. They pull against each other on purpose.
 
-- **Electability**: the approval meter. Will voters re-elect you? Each bloc's reaction
-  saturates, so once a bloc is furious more pain costs little. It rewards loading the
-  pain onto a few groups.
-- **Shared sacrifice** (0-100): how evenly the burden falls across the eight example
-  households, as a share of each one's take-home pay, counting every household
-  equally. It ignores how big the burden is: everyone losing a fifth of their pay
-  scores 100.
-- **Hardship**: the total pain, as "like every household losing X% of take-home pay".
-  Big losses count more than small ones, a dollar counts more to a poorer household,
-  and each household is weighted by roughly how many US households it stands for. It
-  barely notices a tiny group (the top 0.1%) losing a lot, so any household losing more
-  than 25% of take-home pay is flagged as "pushed to the brink".
+- **Electability**: will voters re-elect you? Anger saturates: once a group is
+  furious, more pain costs you little. This rewards loading the pain onto a few groups.
+- **Shared sacrifice**: is the burden spread evenly, so nobody feels singled out?
+  It ignores how big the burden is: everyone losing a fifth of their pay scores
+  perfectly.
+- **Hardship**: how much does it hurt in total? Big losses count far more than small
+  ones, and a dollar counts more to a poorer household.
 
-A plan tuned for one usually scores badly on another, and the win screen grades all
-three. Limitations: both household lenses count only the direct dollar effects on the
-eight example households. Losing coverage, a job or a service doesn't count unless it
-shows up as dollars for one of them, so cuts to research, roads, housing aid or
-weapons barely register. The household shares are rough estimates. Formulas are in
-`CLAUDE.md`.
+A plan tuned for one usually scores badly on another.
 
-## Run the tests
+## About the numbers
+
+- The baseline is fiscal year 2026 actuals: $7.40 trillion out, $5.40 trillion in, a
+  $1.99 trillion deficit. Budget totals come from the US Treasury's Monthly Treasury
+  Statement; most policy options are scaled from Congressional Budget Office and
+  Committee for a Responsible Federal Budget scores. Every source is listed in
+  `meta.sources` in `shared/data.js` and shown in each game under "About the numbers".
+- **This is a simplified model, not a forecast.** Each option is a single annual
+  number; options simply add up; the economy responds through one GDP figure.
+- **Many numbers are estimates.** The dollar effects on example households, how
+  strongly each group reacts, jobs per dollar of spending, and how widely each worry is
+  held are judgment calls, informed by published data where it exists. Several policy
+  scores predate recent tax law changes. Treat the output as a way to understand
+  trade-offs, not as a prediction.
+- The games try to be non-partisan: every option has real costs and real
+  beneficiaries, and both are shown. If something reads as slanted or wrong, please
+  open an issue.
+
+More detail: [Model simplifications](#model-simplifications) below.
+
+## How this was built
+
+Budge It was built with [Claude Code](https://claude.com/claude-code). AI agents
+researched the data, wrote the content and the code, and tested the result under human
+direction. The text and numbers have not all been checked line by line by a person.
+`CLAUDE.md` is the working specification the agents followed: the data schema, the
+engine's rules, and the conventions for adding a game.
+
+## For developers
+
+### Layout
+
+| Path | Purpose |
+|------|---------|
+| `index.html` | Landing page listing the games |
+| `shared/data.js` | `BUDGET_DATA`: every budget number and every word of policy text |
+| `shared/model.js` | `BudgetModel`: pure calculation, validation, share codes, formatting |
+| `games/ledger/` | The Ledger: `index.html`, `app.js`, `style.css` |
+| `games/crowd/` | The Crowd: `people.js` (who is in the crowd and what they care about), `crowd-model.js` (simulation), `crowd.js` (canvas and controls), `index.html`, `style.css` |
+| `tests/` | `node:test` suites and a small fixture dataset |
+| `CLAUDE.md` | Data schema, engine semantics, rules for adding a game |
+
+Everything is vanilla JavaScript loaded with classic `<script>` tags, so each game
+works from a `file://` URL and from any static host. There are no runtime dependencies.
+
+The engine and both games are data-driven: no budget line, lever or figure is
+hard-coded. New games go side by side in `games/<name>/` and share `shared/`.
+
+### Tests
 
 ```sh
 node --test tests/
 ```
 
-Node 24 or later, no dependencies. `tests/model.test.js` checks the engine against a
-small invented dataset (`tests/fixture-data.js`). `tests/data.test.js` checks the real
-`shared/data.js`: it must validate, compute finite numbers everywhere, start with a
-deficit, and be winnable (including the lens challenges, using plans found by search).
+Node 24 or later, no dependencies. The suites check the engine against a small
+invented dataset, check that the real data validates and that the game is winnable,
+and check the crowd simulation (including that no budget control is "free": every one
+must matter to somebody in the crowd).
 
-## Files
+### Adding or editing a policy option
 
-| File | Purpose |
-|------|---------|
-| `index.html` | Landing page listing the games |
-| `games/ledger/index.html` | The Ledger's page shell; loads the three scripts below with classic `<script>` tags |
-| `games/ledger/style.css` | All styling (light and dark, phone to desktop) |
-| `shared/data.js` | `BUDGET_DATA`: every number and every word of content |
-| `shared/model.js` | `BudgetModel`: pure calculation, validation, share codes, formatting |
-| `games/ledger/app.js` | Builds the page from the data and updates it as you play |
-| `games/crowd/` | The Crowd: `people.js` (crowd content), `crowd-model.js` (simulation), `crowd.js` (canvas crowd and controls), `index.html`, `style.css`; see its README |
-| `tests/` | `node:test` suites, the fixture dataset, and `index.js` (lets `node --test tests/` find the suites) |
-| `CLAUDE.md` | The data schema and engine contract |
-
-The engine and UI are generic: no category, lever, persona or figure is hard-coded.
-Everything comes from `shared/data.js`.
-
-## Adding or editing a lever
-
-Add an object to `levers` in `shared/data.js`. It appears under the card named by its
-`parent` with no code change.
+Add an object to `levers` in `shared/data.js`. It appears in every game with no code
+change.
 
 ```js
 {
@@ -110,35 +150,27 @@ Add an object to `levers` in `shared/data.js`. It appears under the card named b
 }
 ```
 
-Then run `node --test tests/`. `validateData` reports anything that doesn't line up
-(unknown parent, a persona or bloc id that doesn't exist, `current` outside
-`min..max`, and so on). If the data has errors, the game shows them instead of
-starting.
-
+Then run the tests. Validation reports anything that doesn't line up, and The Crowd's
+tests will fail until the new option is wired to someone in `games/crowd/people.js`.
 The full schema is in `CLAUDE.md`.
 
-## Model simplifications
+### Model simplifications
 
 - Every estimate is a single, fully phased-in annual number at the scale of the
   baseline year. Real policies phase in, interact and change over time.
 - Effects are linear per unit of change, apart from `falloff` (taxpayers respond
-  more to bigger rate changes) and voter approval, which saturates so that piling
-  on unpopular moves stops costing support at a constant rate (each bloc's swing
-  levels off near 40 points).
+  more to bigger rate changes) and reactions that saturate.
 - Options are independent and simply add up. In reality some overlap (two ways of
   taxing the same income) or interact.
 - The economy responds through one number: each option's short-run GDP effect.
-  GDP changes feed back into revenue (spread across sources by their size) and into
-  jobs, using fixed ratios from `meta`.
+  GDP changes feed back into revenue and into jobs, using fixed ratios.
 - Interest on the debt moves by half a year of interest on the change in this year's
   borrowing. In the ten-year outlook the current-law deficit grows at a fixed rate,
   your policy change grows with the economy, and the extra (or reduced) debt
-  compounds at the average interest rate. GDP is the same in both lines.
-- Household effects are rough, per-household illustrations for a few typical
-  families, not distributional tables.
-
-## Data sources
-
-All sources are listed in `meta.sources` in `shared/data.js`, with the caveats in
-`meta.caveats`. Both are shown in the game in the "About the numbers" section at the
-bottom of the page.
+  compounds at the average interest rate.
+- In The Ledger, the household scorecards count only direct dollar effects on eight
+  example households, so cuts to research, roads, housing aid or weapons barely
+  register there. The Crowd was built to address that: its people also react to lost
+  services, jobs and non-monetary worries.
+- Balancing in a single year is harsher than any real plan, which would phase in over
+  a decade or more.
