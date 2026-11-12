@@ -350,7 +350,7 @@ The test suite enforces < 5 ms.
   top gripe, with counts and the number of real people under each column.
 - **Hover** (or tap) anyone to hear them; **click** (or tap again) for their card: who
   they are, how many people they stand for, what happened to them, and every reason
-  with a link to the control that caused it. Scroll or pinch on the crowd to zoom in.
+  with a link to the control that caused it. Use the + and − buttons (or pinch) to zoom in; the mouse wheel always scrolls the page.
 - The mood bar at the top and both leaderboards highlight the matching figures.
   "The crowd as a list" gives the same information as text, for keyboards and screen
   readers.

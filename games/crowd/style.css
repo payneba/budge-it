@@ -38,7 +38,7 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--topbar-h, 0px) + 56px); }
 body {
   margin: 0;
   background: var(--paper);
@@ -234,20 +234,24 @@ details > summary h2 { display: inline; }
 
 /* ---------------------------------------------------------------- controls panel */
 
+/* Desktop: the controls are an ordinary column that scrolls with the page (one
+   scrollbar). Only the tab row sticks, under the top bar. Phones override this with
+   a bottom sheet that scrolls internally. */
 .panel {
-  /* clip, not hidden: a hidden box can still be scrolled by focus()/scrollIntoView(),
-     which pushed the controls out of sight with no way to scroll back. */
-  position: sticky; top: var(--topbar-h, 0px); height: calc(100vh - var(--topbar-h, 0px)); overflow: hidden; overflow: clip;
+  align-self: stretch;
   background: var(--card); border-left: 1px solid var(--rule); display: flex; flex-direction: column;
 }
 .sheet-handle { display: none; }
 .panel-body { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 8px; border-bottom: 1px solid var(--rule); }
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 8px; border-bottom: 1px solid var(--rule);
+  position: sticky; top: var(--topbar-h, 0px); z-index: 5; background: var(--card);
+}
 .tabs { display: flex; gap: 2px; }
 .tabs [role="tab"] { border: 0; background: transparent; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--muted); }
 .tabs [aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 .reset-all { border: 1px solid var(--rule); background: transparent; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 0.82rem; }
-.pane { position: relative; overflow-y: auto; padding: 4px 12px 24px; flex: 1; min-height: 0; overscroll-behavior: contain; }
+.pane { position: relative; padding: 4px 12px 24px; }
 .pane-group { font-size: 0.8rem; color: var(--muted); font-family: var(--body); font-weight: 600; margin: 14px 0 4px; }
 
 .ctl { padding: 8px 0 8px; border-bottom: 1px solid var(--rule); scroll-margin: 80px; border-radius: 6px; }
@@ -415,6 +419,10 @@ input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent
   .sheet-grip { grid-column: 1 / -1; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--rule); margin-bottom: 4px; }
   .sheet-title { font-family: var(--display); font-weight: 700; font-size: 1.05rem; }
   .sheet-deficit { font-family: var(--display); font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  /* clip, not hidden: a hidden box can still be scrolled by focus()/scrollIntoView() */
+  .panel { overflow: hidden; overflow: clip; }
+  .panel-head { position: static; }
+  .pane { overflow-y: auto; flex: 1; min-height: 0; overscroll-behavior: contain; }
   .panel-body { display: none; height: 50vh; flex: none; }
   body.sheet-open .panel-body { display: flex; }
   .card-layer { align-items: flex-end; padding: 0; }

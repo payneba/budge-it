@@ -1380,7 +1380,9 @@
   canvas.addEventListener('pointercancel', (e) => { endPointer(e); drag = null; });
   canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') setHover(null); });
   canvas.addEventListener('wheel', (e) => {
-    if (!e.ctrlKey && !e.metaKey && cam.z <= 1.01 && e.deltaY > 0) return; // let the page scroll
+    // A plain wheel always scrolls the page. Only Ctrl/Cmd+wheel (which is also what a
+    // trackpad pinch sends) zooms the Mall; otherwise use the +/- buttons.
+    if (!e.ctrlKey && !e.metaKey) return;
     e.preventDefault();
     zoomAt(e.offsetX, e.offsetY, e.deltaY < 0 ? 1.18 : 1 / 1.18);
   }, { passive: false });
@@ -1862,7 +1864,7 @@
     const text = `${figures.length} figures (${mode === 'Mall' ? 'standing on the Mall' : 'arranged ' + mode.toLowerCase()}): ${parts.join(', ')}.`;
     canvas.setAttribute('aria-label', 'The crowd. ' + text + ' The same information is in the list below.');
     setText($('crowdCaption'), arrange === 'mall'
-      ? 'Unhappy people gather at the Capitol steps; the content stroll in the middle; the happy picnic at the back. Hover anyone to hear why; scroll or pinch to zoom in on the signs.'
+      ? 'Unhappy people gather at the Capitol steps; the content stroll in the middle; the happy picnic at the back. Hover anyone to hear why; use + and − (or pinch) to zoom in on the signs.'
       : 'Each column counts figures. Within a column the angriest stand at the bottom.');
   }
 
