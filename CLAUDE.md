@@ -133,7 +133,9 @@ are annual, "fully phased in", at the scale of the baseline fiscal year.
     income: 52000,                       // annual household income, $
     detail: "2-3 sentences: who they are, what federal programs and taxes touch them.",
     federalTaxes: 2100,                  // $/yr federal taxes paid now (all types)
-    federalBenefits: 41000               // $/yr federal benefits received now (cash + value of health coverage)
+    federalBenefits: 41000,              // $/yr federal benefits received now (cash + value of health coverage)
+    share: 0.27                          // fraction of US households this persona stands in for (estimate);
+                                         // required; all persona shares sum to 1. Weights the Hardship lens.
   }],
 
   // Country-wide human outcomes moved by levers.
@@ -152,8 +154,10 @@ are annual, "fully phased in", at the scale of the baseline fiscal year.
   // the best match. Conditions are evaluated by the engine against the result object.
   headlines: [{
     when: { lever: "social_security", op: "<=", value: -20 },   // lever/spending id + threshold on its current value
-    // or: { stat: "deficit" | "approval" | "gdpPct" | "jobs", op: "<=" | ">=", value: N }
+    // or: { stat: "deficit" | "approval" | "gdpPct" | "jobs" | "fairness" | "hardship" | "brink", op: "<=" | ">=", value: N }
+    //     fairness = shared-sacrifice score 0-100; hardship = hardship.pct; brink = number of households at the brink
     // or: { metric: "uninsured", op: ">=", value: 35e6 }
+    // or: { all: [cond, cond, ...] }   all simple conditions must hold (one level, no nesting)
     text: "SENIORS STORM CAPITOL AS CHECKS SHRINK",
     priority: 5                                                  // higher wins
   }],
@@ -164,7 +168,9 @@ are annual, "fully phased in", at the scale of the baseline fiscal year.
     blurb: "Balance the budget without raising any tax.",
     rules: { noTaxIncreases: true }      // supported keys: noTaxIncreases, noSpendingCuts,
                                          // protect: ["social_security","medicare"], minApproval: 40,
-                                         // maxUnemploymentJobsLost: 2e6
+                                         // maxUnemploymentJobsLost: 2e6,
+                                         // minFairness: 60 (shared-sacrifice score at least N),
+                                         // maxHardship: 3 (hardship.pct at most N)
   }]
 }
 ```
@@ -192,6 +198,45 @@ are annual, "fully phased in", at the scale of the baseline fiscal year.
 - Approval per bloc = baselineApproval + Σ effects, clamped 0..100, with diminishing
   sensitivity (large piles of unpopular moves should not go linear forever);
   overall = share-weighted mean.
+- Validation also requires every persona to have a `share` in 0..1, with shares
+  summing to 1 (within 1e-6).
+
+### The three lenses (`result.lenses`)
+
+Approval is only one way to judge a plan. `compute` scores three, side by side, so the
+tension between them is visible. All per-household numbers use the engine's persona
+`delta` ($/yr) and take-home pay `takeHome = income - federalTaxes` (if that is <= 0,
+`max(1, income)` is used instead). `burdenPct = -100 * delta / takeHome` (negative = gain).
+
+```js
+lenses: {
+  electability: { score, baseline },          // == approval.overall / approval.baseline
+  fairness: { score, sd, lightest: { id, burdenPct }, hardest: { id, burdenPct } },
+  hardship: { pct, brink: [personaId], byPersona: { id: { burdenPct, utility } } }
+}
+```
+
+- **Electability** (political): the approval meter, unchanged. It saturates per bloc
+  (40*tanh(x/40)), so once a bloc is furious more pain costs little: it rewards
+  concentrating pain on a few blocs.
+- **Shared sacrifice** (`fairness`): `sd` = population standard deviation of
+  `burdenPct` across personas, each counted ONCE (unweighted: no group should feel
+  singled out however small). `score = 100 * exp(-sd / FAIRNESS_K)`, `FAIRNESS_K = 10`
+  (tuned so realistic balanced plans spread over the range: sd 5 -> 61, 10 -> 37,
+  30 -> 5). Blind to the size of the burden: everyone losing 20% scores 100.
+- **Hardship** (utilitarian): `u_i = ln(max(HARDSHIP_FLOOR, 1 + delta_i / takeHome_i))`,
+  `HARDSHIP_FLOOR = 0.05`; `W = sum(share_i * u_i) / sum(share_i)`;
+  `pct = (1 - exp(W)) * 100` = "like every household losing pct% of take-home pay"
+  (negative = better off on net). Convex, poorer households weigh more per dollar,
+  population-weighted, so it barely notices a tiny group (the top 0.1%) losing a lot.
+  `brink` lists personas with `burdenPct > BRINK_PCT` (25).
+- Constants are exported as `BudgetModel.constants.{FAIRNESS_K, HARDSHIP_FLOOR, BRINK_PCT}`.
+- Known blind spot: both household lenses only see dollars in `effects.personas`. Lines
+  with no persona effects (defense hardware, science, housing aid, transportation,
+  foreign aid, justice, energy, troop levels, retirement age...) are invisible to them,
+  so a plan built on those cuts scores well on all three. See `meta.caveats`.
+- UI display rounding matches the challenge checks: fairness is floored, hardship is
+  rounded up to 0.1.
 
 ## Tone and honesty
 

@@ -36,8 +36,10 @@
         <dl class="sb-stats">
           <div class="sb-stat"><dt>Money in</dt><dd id="statIn">—</dd></div>
           <div class="sb-stat"><dt>Money out</dt><dd id="statOut">—</dd></div>
-          <div class="sb-stat"><dt>Approval</dt><dd id="statApproval">—</dd></div>
           <div class="sb-stat"><dt>Jobs</dt><dd id="statJobs">—</dd></div>
+          <div class="sb-stat sb-lens"><dt>Electability <span class="dir" title="Higher is better" aria-hidden="true">↑</span><span class="sr-only">(higher is better)</span></dt><dd id="statElect">—</dd></div>
+          <div class="sb-stat sb-lens"><dt>Shared sacrifice <span class="dir" title="Higher is better" aria-hidden="true">↑</span><span class="sr-only">(higher is better)</span></dt><dd id="statFair">—</dd></div>
+          <div class="sb-stat sb-lens"><dt>Hardship <span class="dir" title="Lower is better" aria-hidden="true">↓</span><span class="sr-only">(lower is better)</span></dt><dd id="statHard">—</dd></div>
         </dl>
       </div>
     </header>
@@ -86,16 +88,24 @@
           </div>
         </article>
 
-        <section class="panel" aria-labelledby="kitchenTitle">
-          <h2 class="panel-title" id="kitchenTitle">Around the kitchen table</h2>
-          <p class="panel-sub">How your plan changes each household's year, in dollars.</p>
-          <div class="personas" id="personas"></div>
+        <section class="panel panel-lenses" aria-labelledby="lensesTitle">
+          <h2 class="panel-title" id="lensesTitle">Three ways to keep score</h2>
+          <p class="panel-sub">Each is a fair way to judge a plan. They often disagree.</p>
+          <div class="lens-move" id="lensMove" aria-live="polite"></div>
+          <div class="lenses" id="lenses"></div>
         </section>
 
         <section class="panel" aria-labelledby="approvalTitle">
           <h2 class="panel-title" id="approvalTitle">What voters think</h2>
+          <p class="panel-sub">The detail behind Electability.</p>
           <div class="approval-overall" id="approvalOverall"></div>
           <div class="blocs" id="blocs"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="kitchenTitle">
+          <h2 class="panel-title" id="kitchenTitle">Around the kitchen table</h2>
+          <p class="panel-sub">How your plan changes each household's year, in dollars and as a share of take-home pay. The detail behind Shared sacrifice and Hardship.</p>
+          <div class="personas" id="personas"></div>
         </section>
 
         <section class="panel" aria-labelledby="nationTitle">
@@ -161,7 +171,8 @@
           <li>Move the sliders to cut or grow each part of the budget, and flip switches for specific reforms.</li>
           <li>Raise or lower taxes under <strong>Taxes &amp; revenue</strong>.</li>
           <li>Watch the households, voters and the economy react as you go.</li>
-          <li>Get the deficit to zero. Then see how your plan grades out.</li>
+          <li>There are three ways to judge a plan, and they conflict. <strong>Electability</strong>: will voters re-elect you? <strong>Shared sacrifice</strong>: is the burden spread evenly? <strong>Hardship</strong>: how much does it hurt households overall? A move that helps one often hurts another.</li>
+          <li>Get the deficit to zero. Then see how your plan grades out on all three.</li>
         </ol>
         <p class="modal-note">It's a simplified model built on published estimates. Details are in "About the numbers" at the bottom.</p>
         <button class="btn btn-primary" value="ok">Start balancing</button>

@@ -43,6 +43,7 @@
         "The economic effects (GDP and jobs) are rough, short-to-medium-run estimates. They ignore how the Federal Reserve might respond and the long-run benefits of lower debt, which most economists think are real but slow.",
         "Household effects are illustrative estimates for eight made-up but typical families. Your own situation can differ a lot depending on where you live and how a change is designed.",
         "Voter reaction is a game mechanic loosely calibrated to polling on these policies, not a prediction of any election.",
+        "Hardship and shared sacrifice count only the direct dollar effects on the eight example households. They do not include losing health coverage, a job or a public service unless that shows up as dollars for one of those households, so cuts to things like research, roads, housing aid or the military's hardware barely register on them. Each household's share of the country is a rough estimate.",
         "Spending lines are net of fees and offsetting receipts the government collects (for example Medicare premiums), and some agencies' payments into federal retirement funds are netted out, so a few lines look smaller than the gross checks they pay."
       ]
     },
@@ -1461,6 +1462,9 @@
 
     // ------------------------------------------------------------------
     // KITCHEN-TABLE HOUSEHOLDS (illustrative; 2026 tax law)
+    // `share` = the fraction of US households each one stands in for, used to
+    // population-weight the Hardship lens. These are rough ESTIMATES, judged from
+    // Census CPS income/age distributions and IRS SOI income percentiles; they sum to 1.
     // ------------------------------------------------------------------
     personas: [
       {
@@ -1470,7 +1474,9 @@
         // Income tax ~$350 (taxable ~$3,500 after std + senior deductions) + ~$1,000 excise/tariff costs
         federalTaxes: 1350,
         // Social Security $46,000 + Medicare coverage worth ~$26,000 for two after premiums
-        federalBenefits: 72000
+        federalBenefits: 72000,
+        // share: Households headed by someone 65+ are ~27% of US households (Census CPS ASEC 2025: ~36M of 133M). (estimate)
+        share: 0.27
       },
       {
         id: "single_mom", name: "Keisha", icon: "👩‍👧‍👦", tagline: "Single mom of two, retail worker, Georgia",
@@ -1479,7 +1485,9 @@
         // Payroll tax 7.65% = $2,448 + ~$400 excise/tariffs; income tax wiped out by credits
         federalTaxes: 2850,
         // EITC ~$5,330 + refundable child credit $3,400 + SNAP ~$2,400 + school meals ~$1,000 + kids' Medicaid ~$7,000 + premium credit ~$6,000
-        federalBenefits: 25100
+        federalBenefits: 25100,
+        // share: Lower-income working-age households (roughly the bottom fifth by income, under ~$40k) who rely on refundable credits, SNAP or Medicaid. (estimate)
+        share: 0.20
       },
       {
         id: "median_family", name: "Dan & Maria Ortiz", icon: "👨‍👩‍👧‍👦", tagline: "Two-earner family, two kids, Arizona",
@@ -1487,7 +1495,9 @@
         detail: "Dan is an HVAC technician and Maria is a dental hygienist. They have health insurance through Dan's job, a mortgage, and two kids in public school. About $72,800 of their income is taxable after the standard deduction, all of it in the 10% and 12% brackets.",
         // Income tax $8,240 - $4,400 child credit = $3,840; payroll $8,033; ~$900 excise/tariffs
         federalTaxes: 12800,
-        federalBenefits: 500
+        federalBenefits: 500,
+        // share: Middle-income working families, roughly $60k-$150k with a W-2 job and employer coverage (the broad middle of the IRS/Census distribution). (estimate)
+        share: 0.24
       },
       {
         id: "young_renter", name: "Tyler", icon: "🧑‍🍳", tagline: "27, restaurant assistant manager, Denver",
@@ -1495,7 +1505,9 @@
         detail: "Tyler rents a one-bedroom with a roommate and is paying off $32,000 in student loans. About $9,000 of his pay is tips and overtime, now partly tax-free under the 2025 law. He gets health insurance through work.",
         // Income tax ~$3,700 after tip/overtime deduction; payroll $4,437; ~$600 other
         federalTaxes: 8700,
-        federalBenefits: 300
+        federalBenefits: 300,
+        // share: Young and single workers with moderate wages, renters, no kids; about a fifth of households are under-35 or single-person working households. (estimate)
+        share: 0.19
       },
       {
         id: "military_family", name: "Sgt. Jess & Marcus Reyes", icon: "🪖", tagline: "Army family, two kids, Fort Hood, Texas",
@@ -1504,7 +1516,9 @@
         // Payroll ~$5,200 on $68k taxable pay, income tax ~$1,500 after child credit, ~$800 other
         federalTaxes: 7500,
         // Housing allowance $22,000 + TRICARE worth ~$14,000 (salary not counted)
-        federalBenefits: 36000
+        federalBenefits: 36000,
+        // share: Active-duty, Guard/Reserve and DoD civilian households: ~2.5M, about 2% of households. (estimate)
+        share: 0.02
       },
       {
         id: "farm_family", name: "Dale & Karen Hutchins", icon: "🌽", tagline: "Corn & soybean farmers, Iowa",
@@ -1513,7 +1527,9 @@
         // Self-employment tax ~$13,400 + income tax ~$5,000 + ~$900 other
         federalTaxes: 19300,
         // Farm payments + crop-insurance premium subsidy ~$18,000 + VA disability ~$7,800
-        federalBenefits: 25800
+        federalBenefits: 25800,
+        // share: Farm households (~2M per USDA ERS) plus rural self-employed households tied to farm programs: about 2%. (estimate)
+        share: 0.02
       },
       {
         id: "professional_couple", name: "Nina & James Park", icon: "👩‍⚕️", tagline: "Doctor & engineer, two kids, New Jersey suburbs",
@@ -1521,7 +1537,9 @@
         detail: "She's a pediatrician, he's a software engineer; each earns about $225,000. They itemize (state and property taxes up to the new $40,000 SALT cap, plus mortgage interest), top out in the 24% bracket, and max out their 401(k)s. They receive essentially no direct federal benefits.",
         // Income tax ~$75,700 + payroll ~$31,200 + ~$3,000 other
         federalTaxes: 110000,
-        federalBenefits: 0
+        federalBenefits: 0,
+        // share: High earners below the very top: roughly the top 6% of households (above ~$250k), excluding the top 0.1%. (estimate)
+        share: 0.059
       },
       {
         id: "top_household", name: "The Whitfields", icon: "🛥️", tagline: "Tech founder & investor family, Florida",
@@ -1529,7 +1547,9 @@
         detail: "One of the top 0.1% of households. About $1.5 million comes from salary and business income; the other $6.5 million is capital gains and dividends, taxed at 23.8%. Their net worth is around $150 million, mostly stock they've never sold.",
         // Ordinary income ~$520,000 + capital income $6.5M x 23.8% = $1.55M + Medicare/SS ~$47,000
         federalTaxes: 2100000,
-        federalBenefits: 0
+        federalBenefits: 0,
+        // share: Literally the top 0.1% of households by income (~133,000 households). (estimate)
+        share: 0.001
       }
     ],
 
@@ -1577,6 +1597,13 @@
       { when: { stat: "gdpPct", op: "<=", value: -3 }, text: "RECESSION! ECONOMISTS SAY 'TOLD YOU SO'", priority: 8 },
       { when: { stat: "jobs", op: "<=", value: -3000000 }, text: "PINK SLIPS PILE UP: MILLIONS OF JOBS GONE", priority: 8 },
       { when: { stat: "jobs", op: ">=", value: 1000000 }, text: "HELP WANTED SIGNS SPROUT LIKE DANDELIONS", priority: 6 },
+      // Shared sacrifice and hardship (the household lenses)
+      { when: { stat: "brink", op: ">=", value: 3 }, text: "HOUSEHOLDS ACROSS AMERICA LOSE A QUARTER OF THEIR PAY", priority: 8 },
+      { when: { stat: "brink", op: ">=", value: 1 }, text: "FAMILY PUSHED TO THE BRINK BY BUDGET PLAN", priority: 7 },
+      { when: { stat: "hardship", op: ">=", value: 12 }, text: "BELTS TIGHTEN TO THE LAST NOTCH AT KITCHEN TABLES NATIONWIDE", priority: 7 },
+      { when: { stat: "fairness", op: "<=", value: 10 }, text: "ONE HOUSEHOLD FOOTS THE BILL WHILE THE REST BARELY NOTICE", priority: 6 },
+      { when: { all: [{ stat: "fairness", op: ">=", value: 90 }, { stat: "hardship", op: ">=", value: 2 }] }, text: "EVERYBODY CHIPS IN: PAIN SPLIT SO EVENLY ECONOMISTS CHECK THEIR MATH", priority: 8 },
+      { when: { stat: "hardship", op: "<=", value: -3 }, text: "HOUSEHOLDS COME OUT AHEAD AS WASHINGTON SQUEEZES ELSEWHERE", priority: 5 },
       // Human outcomes
       { when: { metric: "uninsured", op: ">=", value: 35e6 }, text: "ER WAITING ROOMS OVERFLOW AS MILLIONS LOSE COVERAGE", priority: 6 },
       { when: { metric: "uninsured", op: "<=", value: 18e6 }, text: "INSURANCE CARDS FOR (ALMOST) EVERYBODY", priority: 5 },
@@ -1628,7 +1655,14 @@
       { id: "landslide", name: "Landslide", icon: "🗳️", blurb: "Balance the budget and keep overall approval at 40 or above.", rules: { minApproval: 40 } },
       { id: "soft_landing", name: "Soft Landing", icon: "🛬", blurb: "Balance the budget while losing fewer than 2.5 million jobs.", rules: { maxUnemploymentJobsLost: 2.5e6 } },
       { id: "safety_net", name: "Safety Net Intact", icon: "🕸️", blurb: "Balance the budget without cutting Social Security, Medicaid, food aid or income support.", rules: { protect: ["social_security", "medicaid_chip", "snap_food", "income_support"] } },
-      { id: "grand_bargain", name: "Grand Bargain", icon: "🤝", blurb: "Balance the budget with approval of at least 35 and fewer than 3 million jobs lost.", rules: { minApproval: 35, maxUnemploymentJobsLost: 3e6 } }
+      { id: "grand_bargain", name: "Grand Bargain", icon: "🤝", blurb: "Balance the budget with approval of at least 35 and fewer than 3 million jobs lost.", rules: { minApproval: 35, maxUnemploymentJobsLost: 3e6 } },
+      // Lens challenges. Thresholds checked with a plan search on this data: the best balanced
+      // plans found reach shared sacrifice ~100, hardship about -17%, and approval ~56, but not
+      // all at once (approval 40 + shared sacrifice 60 + hardship 3% is feasible; approval 50 with
+      // the same two was not found).
+      { id: "all_together", name: "All in This Together", icon: "⚖️", blurb: "Balance the budget so the burden falls evenly: shared sacrifice of at least 70.", rules: { minFairness: 70 } },
+      { id: "do_no_harm", name: "First, Do No Harm", icon: "🩹", blurb: "Balance the budget while keeping hardship to the equivalent of 2% of take-home pay or less.", rules: { maxHardship: 2 } },
+      { id: "triple_crown", name: "Triple Crown", icon: "👑", blurb: "Win on all three scorecards at once: approval of 40 or more, shared sacrifice of 60 or more, and hardship of 3% or less.", rules: { minApproval: 40, minFairness: 60, maxHardship: 3 } }
     ]
   };
 

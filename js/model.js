@@ -6,8 +6,8 @@
   const GROUPS = ['mandatory', 'defense', 'nondefense', 'interest'];
   const FORMATS = ['people', 'jobs', 'dollars', 'percent', 'number'];
   const OPS = ['<=', '>=', '<', '>', '=='];
-  const STATS = ['deficit', 'approval', 'gdpPct', 'jobs'];
-  const RULE_KEYS = ['noTaxIncreases', 'noSpendingCuts', 'protect', 'minApproval', 'maxUnemploymentJobsLost'];
+  const STATS = ['deficit', 'approval', 'gdpPct', 'jobs', 'fairness', 'hardship', 'brink'];
+  const RULE_KEYS = ['noTaxIncreases', 'noSpendingCuts', 'protect', 'minApproval', 'maxUnemploymentJobsLost', 'minFairness', 'maxHardship'];
   const META_NUMBERS = ['fiscalYear', 'gdp', 'population', 'households', 'debtHeldByPublic', 'avgInterestRate',
     'baselineDeficitGrowth', 'gdpGrowth', 'revenueFeedbackPerGdpPct', 'jobsPerGdpPct'];
 
@@ -17,6 +17,19 @@
   // Deficit at or below this ($B) counts as balanced.
   const BALANCE_TOLERANCE = 0.5;
   const PROJECTION_YEARS = 10;
+
+  // The three lenses (see lensesFor). Burdens are measured as a share of each
+  // household's take-home pay (income minus federal taxes).
+  // Shared sacrifice: score = 100 * exp(-sd / FAIRNESS_K), sd = spread of burdens in
+  // percentage points across households, each counted once. K = 10 was tuned on the
+  // real data: a spread of 5 points scores ~61, 10 ~37, 30 (one household soaked) ~5.
+  // With K = 5 nearly every balanced plan scored under 15.
+  const FAIRNESS_K = 10;
+  // Hardship: log utility of take-home pay, floored so a loss of everything is finite.
+  // ln(0.05) ~ -3: losing it all counts as about 20 times worse than losing 14%.
+  const HARDSHIP_FLOOR = 0.05;
+  // A household losing more than this % of take-home pay is "pushed to the brink".
+  const BRINK_PCT = 25;
 
   const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
   const isStr = (x) => typeof x === 'string' && x.length > 0;
@@ -143,11 +156,15 @@
       checkEffects(l.effects, where);
     });
 
+    let personaShareSum = 0;
     arr(data.personas).forEach((p) => {
       if (!p) return;
       for (const k of ['income', 'federalTaxes', 'federalBenefits']) if (!isNum(p[k])) err(`persona "${p.id}".${k} must be a number.`);
       if (!isStr(p.name)) err(`persona "${p.id}" needs a name.`);
+      if (!isNum(p.share) || p.share < 0 || p.share > 1) err(`persona "${p.id}".share must be a number from 0 to 1 (the fraction of US households it stands in for).`);
+      else personaShareSum += p.share;
     });
+    if (arr(data.personas).length && Math.abs(personaShareSum - 1) > 1e-6) err(`Persona shares must sum to 1 (they sum to ${round6(personaShareSum)}).`);
     arr(data.metrics).forEach((m) => {
       if (!m) return;
       if (!isNum(m.baseline)) err(`metric "${m.id}".baseline must be a number.`);
@@ -168,17 +185,24 @@
       const where = `headline ${i}${h && h.text ? ` ("${String(h.text).slice(0, 40)}")` : ''}`;
       if (!h || !isStr(h.text)) { err(`${where} needs text.`); return; }
       if (h.priority !== undefined && !isNum(h.priority)) err(`${where}.priority must be a number.`);
-      const w = h.when;
-      if (!w || typeof w !== 'object') { err(`${where} needs a "when" condition.`); return; }
-      const kinds = ['lever', 'stat', 'metric'].filter((k) => w[k] !== undefined);
-      if (kinds.length !== 1) err(`${where}.when must have exactly one of lever, stat or metric.`);
-      if (w.lever !== undefined && !(lineKind.get(w.lever) === 'spending' || levers.some((l) => l && l.id === w.lever))) {
-        err(`${where} refers to unknown lever/spending id "${w.lever}".`);
-      }
-      if (w.stat !== undefined && !STATS.includes(w.stat)) err(`${where} has unknown stat "${w.stat}" (use ${STATS.join(', ')}).`);
-      if (w.metric !== undefined && !metricIds.has(w.metric)) err(`${where} refers to unknown metric "${w.metric}".`);
-      if (!OPS.includes(w.op)) err(`${where} has unsupported op "${w.op}" (use ${OPS.join(' ')}).`);
-      if (!isNum(w.value) && typeof w.value !== 'boolean') err(`${where}.when.value must be a number.`);
+      const checkWhen = (w, depth) => {
+        if (!w || typeof w !== 'object') { err(`${where} needs a "when" condition.`); return; }
+        if (w.all !== undefined) {
+          if (depth > 0 || !Array.isArray(w.all) || !w.all.length) err(`${where}.when.all must be a non-empty array of simple conditions.`);
+          else w.all.forEach((c) => checkWhen(c, depth + 1));
+          return;
+        }
+        const kinds = ['lever', 'stat', 'metric'].filter((k) => w[k] !== undefined);
+        if (kinds.length !== 1) err(`${where}.when must have exactly one of lever, stat or metric.`);
+        if (w.lever !== undefined && !(lineKind.get(w.lever) === 'spending' || levers.some((l) => l && l.id === w.lever))) {
+          err(`${where} refers to unknown lever/spending id "${w.lever}".`);
+        }
+        if (w.stat !== undefined && !STATS.includes(w.stat)) err(`${where} has unknown stat "${w.stat}" (use ${STATS.join(', ')}).`);
+        if (w.metric !== undefined && !metricIds.has(w.metric)) err(`${where} refers to unknown metric "${w.metric}".`);
+        if (!OPS.includes(w.op)) err(`${where} has unsupported op "${w.op}" (use ${OPS.join(' ')}).`);
+        if (!isNum(w.value) && typeof w.value !== 'boolean') err(`${where}.when.value must be a number.`);
+      };
+      checkWhen(h.when, 0);
     });
 
     const chIds = new Set();
@@ -192,7 +216,7 @@
         if (!Array.isArray(rules.protect)) err(`challenge "${c.id}".rules.protect must be an array of ids.`);
         else rules.protect.forEach((id) => { if (!lineKind.has(id)) err(`challenge "${c.id}" rules.protect refers to unknown id "${id}".`); });
       }
-      for (const k of ['minApproval', 'maxUnemploymentJobsLost']) if (rules[k] !== undefined && !isNum(rules[k])) err(`challenge "${c.id}".rules.${k} must be a number.`);
+      for (const k of ['minApproval', 'maxUnemploymentJobsLost', 'minFairness', 'maxHardship']) if (rules[k] !== undefined && !isNum(rules[k])) err(`challenge "${c.id}".rules.${k} must be a number.`);
     });
     return errors;
   }
@@ -434,14 +458,21 @@
       gdpPct, jobs, interest: lockedLine ? spendingById[lockedLine.id] : 0,
       metrics, personas,
       approval: { overall, baseline: baselineApproval, byBloc },
+      lenses: lensesFor(data, personas, overall, baselineApproval),
       activeStories, storyById, changes,
       balanced: deficit <= BALANCE_TOLERANCE
     };
 
     // 10. Headlines.
+    const statValue = {
+      approval: () => overall,
+      fairness: () => result.lenses.fairness.score,
+      hardship: () => result.lenses.hardship.pct,
+      brink: () => result.lenses.hardship.brink.length
+    };
     const valueOf = (w) => {
       if (w.stat !== undefined) {
-        if (w.stat === 'approval') return overall;
+        if (statValue[w.stat]) return statValue[w.stat]();
         return result[w.stat];
       }
       if (w.metric !== undefined) return metrics[w.metric] ? metrics[w.metric].value : NaN;
@@ -451,11 +482,14 @@
       }
       return NaN;
     };
+    const holds = (w) => {
+      if (Array.isArray(w.all)) return w.all.length > 0 && w.all.every((c) => holds(c || {}));
+      const target = typeof w.value === 'boolean' ? Number(w.value) : w.value;
+      return compare(valueOf(w), w.op, target);
+    };
     const matches = [];
     arr(data.headlines).forEach((h, i) => {
-      const w = h.when || {};
-      const target = typeof w.value === 'boolean' ? Number(w.value) : w.value;
-      if (compare(valueOf(w), w.op, target)) matches.push({ text: h.text, priority: h.priority || 0, slot: h.slot, index: i });
+      if (holds(h.when || {})) matches.push({ text: h.text, priority: h.priority || 0, slot: h.slot, index: i });
     });
     matches.sort((a, b) => (b.priority - a.priority) || (a.index - b.index));
     result.headlines = matches;
@@ -464,6 +498,51 @@
     // 11. Ten-year projection.
     result.projection = project(meta, baselineDeficit, policyDeficitChange);
     return result;
+  }
+
+  // Three ways to keep score on how people take the plan.
+  // - electability: the approval meter (political; saturates per bloc).
+  // - fairness ("shared sacrifice"): how evenly the burden falls across the example
+  //   households, each counted once regardless of how many households it stands for.
+  // - hardship: population-weighted log utility of take-home pay, reported as the
+  //   equivalent across-the-board % loss of take-home pay (negative = better off).
+  function lensesFor(data, personas, overall, baselineApproval) {
+    const rows = arr(data.personas).map((p) => {
+      const th = p.income - p.federalTaxes;
+      const takeHome = th > 0 ? th : Math.max(1, p.income);
+      const delta = personas[p.id] ? personas[p.id].delta : 0;
+      const burden = delta ? -delta / takeHome : 0;
+      const utility = Math.log(Math.max(HARDSHIP_FLOOR, 1 + delta / takeHome));
+      return { id: p.id, share: isNum(p.share) ? p.share : 0, burdenPct: 100 * burden, utility };
+    });
+    // Fairness: unweighted population standard deviation of burden, in points.
+    let sd = 0, lightest = null, hardest = null;
+    if (rows.length) {
+      const mean = rows.reduce((a, r) => a + r.burdenPct, 0) / rows.length;
+      sd = Math.sqrt(rows.reduce((a, r) => a + (r.burdenPct - mean) * (r.burdenPct - mean), 0) / rows.length);
+      if (sd < 1e-9) sd = 0;
+      let lo = rows[0], hi = rows[0];
+      for (const r of rows) {
+        if (r.burdenPct < lo.burdenPct) lo = r;
+        if (r.burdenPct > hi.burdenPct) hi = r;
+      }
+      lightest = { id: lo.id, burdenPct: lo.burdenPct };
+      hardest = { id: hi.id, burdenPct: hi.burdenPct };
+    }
+    // Hardship: share-weighted mean utility -> equivalent uniform loss.
+    const shareTotal = rows.reduce((a, r) => a + r.share, 0);
+    const W = shareTotal > 0 ? rows.reduce((a, r) => a + r.share * r.utility, 0) / shareTotal : 0;
+    const byPersona = {};
+    for (const r of rows) byPersona[r.id] = { burdenPct: r.burdenPct, utility: r.utility };
+    return {
+      electability: { score: overall, baseline: baselineApproval },
+      fairness: { score: 100 * Math.exp(-sd / FAIRNESS_K), sd, lightest, hardest },
+      hardship: {
+        pct: W === 0 ? 0 : (1 - Math.exp(W)) * 100,
+        brink: rows.filter((r) => r.burdenPct > BRINK_PCT).map((r) => r.id),
+        byPersona
+      }
+    };
   }
 
   // Baseline deficit grows at baselineDeficitGrowth; the player's policy change scales
@@ -562,6 +641,12 @@
     }
     if (isNum(rules.maxUnemploymentJobsLost) && r.jobs < -rules.maxUnemploymentJobsLost) {
       fail('maxUnemploymentJobsLost', `Your plan costs ${format.people(-r.jobs)} jobs; the limit is ${format.people(rules.maxUnemploymentJobsLost)}.`);
+    }
+    if (isNum(rules.minFairness) && r.lenses.fairness.score < rules.minFairness) {
+      fail('minFairness', `Shared sacrifice scores ${Math.floor(r.lenses.fairness.score)}; it must be at least ${rules.minFairness}.`);
+    }
+    if (isNum(rules.maxHardship) && r.lenses.hardship.pct > rules.maxHardship) {
+      fail('maxHardship', `Hardship is ${(Math.ceil(r.lenses.hardship.pct * 10) / 10).toFixed(1)}% of take-home pay; it must be ${rules.maxHardship}% or less.`);
     }
     const ok = violations.length === 0;
     return { ok, violations, broken, balanced: r.balanced, won: ok && r.balanced };
@@ -669,7 +754,10 @@
   const BudgetModel = {
     validateData, defaultState, sanitizeState, compute, encodeState, decodeState,
     checkChallenge, leverYield, leverUnits, format,
-    constants: { APPROVAL_SATURATION, BALANCE_TOLERANCE, PROJECTION_YEARS, GROUPS, FORMATS, RULE_KEYS }
+    constants: {
+      APPROVAL_SATURATION, BALANCE_TOLERANCE, PROJECTION_YEARS, GROUPS, FORMATS, RULE_KEYS, STATS,
+      FAIRNESS_K, HARDSHIP_FLOOR, BRINK_PCT
+    }
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = BudgetModel;

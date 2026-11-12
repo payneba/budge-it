@@ -429,3 +429,191 @@ test('format helpers produce human numbers', () => {
   assert.equal(F.metric(2.5e9, 'dollars'), '$2.50 billion');
   assert.equal(F.metric(1234.567, 'number'), '1,235');
 });
+
+// ---------------------------------------------------------------- three lenses
+
+// Fixture copy plus one toggle lever whose persona effects are given directly in
+// $/year. Switch it on with stateWith(d, {}, { test_hit: true }).
+function withHit(personas, id = 'test_hit') {
+  const d = clone(FIXTURE);
+  d.levers.push({
+    id, parent: 'income_tax', side: 'revenue', type: 'toggle', name: 'Test hit',
+    budgetPerUnit: 0, effects: { metrics: {}, personas, approval: {}, gdpPct: 0 }
+  });
+  return d;
+}
+const TAKE_HOME = { retiree: 38500, worker_family: 66000, business_owner: 620000 };
+const pctHit = (pct) => {
+  const out = {};
+  for (const [id, th] of Object.entries(TAKE_HOME)) out[id] = -th * pct / 100;
+  return out;
+};
+const lensesOf = (d, levers = { test_hit: true }) => M.compute(d, stateWith(d, {}, levers)).lenses;
+
+test('lenses: baseline is perfectly fair and painless', () => {
+  const r = M.compute(FIXTURE, M.defaultState(FIXTURE));
+  assert.equal(r.lenses.fairness.score, 100);
+  assert.equal(r.lenses.fairness.sd, 0);
+  assert.equal(r.lenses.hardship.pct, 0);
+  assert.deepEqual(r.lenses.hardship.brink, []);
+  near(r.lenses.electability.score, r.approval.overall);
+  near(r.lenses.electability.baseline, r.approval.baseline);
+  for (const id of Object.keys(TAKE_HOME)) {
+    assert.equal(r.lenses.hardship.byPersona[id].burdenPct, 0);
+    assert.equal(r.lenses.hardship.byPersona[id].utility, 0);
+  }
+  // approval field still works alongside lenses
+  near(r.approval.overall, 0.3 * 45 + 0.5 * 40 + 0.2 * 50);
+});
+
+test('lenses: an equal-percentage hit keeps fairness at 100 but raises hardship', () => {
+  const L = lensesOf(withHit(pctHit(10)));
+  near(L.fairness.sd, 0, 1e-9);
+  near(L.fairness.score, 100, 1e-9);
+  // everyone loses 10% of take-home -> equivalent across-the-board loss is exactly 10%
+  near(L.hardship.pct, 10, 1e-9);
+  for (const id of Object.keys(TAKE_HOME)) near(L.hardship.byPersona[id].burdenPct, 10, 1e-9);
+});
+
+test('lenses: concentrating the same dollars on one household lowers fairness', () => {
+  const even = pctHit(2);
+  const total = Object.values(even).reduce((a, v) => a + v, 0);
+  const L1 = lensesOf(withHit(even));
+  const L2 = lensesOf(withHit({ worker_family: total }));
+  assert.ok(L2.fairness.score < L1.fairness.score - 10, `${L2.fairness.score} vs ${L1.fairness.score}`);
+  assert.ok(L2.fairness.sd > 5);
+  assert.equal(L2.fairness.hardest.id, 'worker_family');
+  near(L2.fairness.hardest.burdenPct, -100 * total / 66000);
+  assert.ok(L2.fairness.lightest.id === 'retiree' || L2.fairness.lightest.id === 'business_owner');
+  near(L2.fairness.lightest.burdenPct, 0);
+  // sd is the population standard deviation of burden in percentage points, score = 100*exp(-sd/K)
+  const b = [0, -100 * total / 66000, 0];
+  const mean = b.reduce((a, v) => a + v, 0) / 3;
+  const sd = Math.sqrt(b.reduce((a, v) => a + (v - mean) ** 2, 0) / 3);
+  near(L2.fairness.sd, sd, 1e-9);
+  near(L2.fairness.score, 100 * Math.exp(-sd / M.constants.FAIRNESS_K), 1e-9);
+});
+
+test('lenses: hardship is convex in the size of the loss', () => {
+  const one = lensesOf(withHit({ worker_family: -0.1 * 66000 }));
+  const two = lensesOf(withHit({ worker_family: -0.2 * 66000 }));
+  assert.ok(-two.hardship.byPersona.worker_family.utility > 2 * -one.hardship.byPersona.worker_family.utility);
+  assert.ok(two.hardship.pct > 2 * one.hardship.pct);
+});
+
+test('lenses: hardship weights households by population share', () => {
+  const retireeHit = lensesOf(withHit({ retiree: -0.2 * 38500 }));       // share 0.30
+  const ownerHit = lensesOf(withHit({ business_owner: -0.2 * 620000 })); // share 0.05
+  near(retireeHit.hardship.byPersona.retiree.burdenPct, ownerHit.hardship.byPersona.business_owner.burdenPct);
+  assert.ok(retireeHit.hardship.pct > 5 * ownerHit.hardship.pct);
+  // ... while shared sacrifice counts each household equally
+  near(retireeHit.fairness.score, ownerHit.fairness.score, 1e-9);
+  // W = sum(share * u); pct = (1 - exp(W)) * 100
+  near(ownerHit.hardship.pct, (1 - Math.exp(0.05 * Math.log(0.8))) * 100, 1e-9);
+});
+
+test('lenses: the same dollar loss hurts a low-income household more', () => {
+  const low = lensesOf(withHit({ retiree: -5000 }));
+  const high = lensesOf(withHit({ business_owner: -5000 }));
+  assert.ok(low.hardship.byPersona.retiree.utility < high.hardship.byPersona.business_owner.utility);
+  assert.ok(low.hardship.byPersona.retiree.burdenPct > 10 * high.hardship.byPersona.business_owner.burdenPct);
+});
+
+test('lenses: gains count as negative burden and negative hardship', () => {
+  const L = lensesOf(withHit(pctHit(-5)));
+  near(L.hardship.pct, -5, 1e-9);
+  near(L.fairness.score, 100, 1e-9);
+  near(L.hardship.byPersona.retiree.burdenPct, -5, 1e-9);
+});
+
+test('lenses: FLOOR keeps output finite when a loss exceeds take-home pay', () => {
+  const L = lensesOf(withHit({ retiree: -100000, worker_family: -66000 }));
+  for (const v of [L.hardship.pct, L.fairness.score, L.fairness.sd]) assert.ok(Number.isFinite(v));
+  near(L.hardship.byPersona.retiree.utility, Math.log(M.constants.HARDSHIP_FLOOR));
+  near(L.hardship.byPersona.worker_family.utility, Math.log(M.constants.HARDSHIP_FLOOR));
+  assert.ok(L.hardship.pct < 100);
+});
+
+test('lenses: households losing more than the brink threshold are flagged', () => {
+  const T = M.constants.BRINK_PCT;
+  const over = lensesOf(withHit({ worker_family: -(T + 1) / 100 * 66000, retiree: -(T - 1) / 100 * 38500 }));
+  assert.deepEqual(over.hardship.brink, ['worker_family']);
+  const under = lensesOf(withHit(pctHit(T - 1)));
+  assert.deepEqual(under.hardship.brink, []);
+  const all = lensesOf(withHit(pctHit(T + 5)));
+  assert.deepEqual(all.hardship.brink.slice().sort(), Object.keys(TAKE_HOME).sort());
+});
+
+test('lenses: take-home guard handles taxes at or above income', () => {
+  const d = withHit({ business_owner: -1000 });
+  d.personas.find((p) => p.id === 'business_owner').federalTaxes = 900000;
+  const L = lensesOf(d);
+  assert.ok(Number.isFinite(L.hardship.pct) && Number.isFinite(L.fairness.score));
+  assert.ok(Number.isFinite(L.hardship.byPersona.business_owner.burdenPct));
+});
+
+test('challenge: minFairness and maxHardship', () => {
+  const d = withHit({ worker_family: -0.3 * 66000 });
+  const s = stateWith(d, {}, { test_hit: true });
+  const r = M.compute(d, s);
+  const fair = { id: 'f', name: 'f', rules: { minFairness: 60 } };
+  const hard = { id: 'h', name: 'h', rules: { maxHardship: 5 } };
+  const rf = M.checkChallenge(d, s, r, fair);
+  assert.equal(rf.ok, false);
+  assert.deepEqual(rf.broken, { minFairness: true });
+  assert.ok(rf.violations.some((v) => /shared sacrifice/i.test(v)));
+  const rh = M.checkChallenge(d, s, r, hard);
+  assert.equal(rh.ok, false);
+  assert.deepEqual(rh.broken, { maxHardship: true });
+  assert.ok(rh.violations.some((v) => /hardship/i.test(v)));
+  const base = M.defaultState(d);
+  assert.equal(M.checkChallenge(d, base, M.compute(d, base), fair).ok, true);
+  assert.equal(M.checkChallenge(d, base, M.compute(d, base), hard).ok, true);
+  // computes the result itself when none is passed
+  assert.equal(M.checkChallenge(d, s, null, hard).ok, false);
+});
+
+test('headline stats: fairness, hardship and brink', () => {
+  const d = withHit({ worker_family: -0.3 * 66000 });
+  d.headlines.push(
+    { when: { stat: 'fairness', op: '<=', value: 50 }, text: 'LOPSIDED', priority: 20 },
+    { when: { stat: 'hardship', op: '>=', value: 5 }, text: 'PAINFUL', priority: 19 },
+    { when: { stat: 'brink', op: '>=', value: 1 }, text: 'BRINK', priority: 18 }
+  );
+  assert.deepEqual(M.validateData(d).filter((e) => /headline/.test(e)), []);
+  const texts = M.compute(d, stateWith(d, {}, { test_hit: true })).headlines.map((h) => h.text);
+  assert.ok(texts.includes('LOPSIDED') && texts.includes('PAINFUL') && texts.includes('BRINK'));
+  const base = M.compute(d, M.defaultState(d)).headlines.map((h) => h.text);
+  assert.ok(!base.includes('LOPSIDED') && !base.includes('PAINFUL') && !base.includes('BRINK'));
+});
+
+test('validateData: persona shares and new rule keys', () => {
+  const expectErr = (mutate, re) => {
+    const d = clone(FIXTURE);
+    mutate(d);
+    const errs = M.validateData(d);
+    assert.ok(errs.some((e) => re.test(e)), `expected ${re}, got ${JSON.stringify(errs)}`);
+  };
+  expectErr((d) => { delete d.personas[0].share; }, /persona "retiree"\.share/);
+  expectErr((d) => { d.personas[0].share = -0.1; }, /share/);
+  expectErr((d) => { d.personas[0].share = 0.31; }, /Persona shares must sum to 1/);
+  expectErr((d) => { d.challenges[0].rules.minFairness = 'high'; }, /minFairness/);
+  expectErr((d) => { d.challenges[0].rules.maxHardship = null; }, /maxHardship/);
+  const ok = clone(FIXTURE);
+  ok.challenges[0].rules.minFairness = 50;
+  ok.challenges[0].rules.maxHardship = 3;
+  assert.deepEqual(M.validateData(ok), []);
+});
+
+test('headline "all" combines simple conditions', () => {
+  const d = withHit(pctHit(5));
+  d.headlines.push({ when: { all: [{ stat: 'fairness', op: '>=', value: 90 }, { stat: 'hardship', op: '>=', value: 2 }] }, text: 'EVEN PAIN', priority: 30 });
+  assert.deepEqual(M.validateData(d).filter((e) => /headline/.test(e)), []);
+  assert.equal(M.compute(d, stateWith(d, {}, { test_hit: true })).headline.text, 'EVEN PAIN');
+  assert.notEqual(M.compute(d, M.defaultState(d)).headline.text, 'EVEN PAIN', 'baseline is fair but painless');
+  const bad = clone(d);
+  bad.headlines[bad.headlines.length - 1].when = { all: [] };
+  assert.ok(M.validateData(bad).some((e) => /all/.test(e)));
+  bad.headlines[bad.headlines.length - 1].when = { all: [{ stat: 'vibes', op: '>=', value: 1 }] };
+  assert.ok(M.validateData(bad).some((e) => /vibes/.test(e)));
+});

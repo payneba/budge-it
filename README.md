@@ -24,6 +24,31 @@ offline. It also works unchanged when hosted on GitHub Pages.
 - **Copy share link** puts your plan in the URL (`index.html#id:value,...`). Your
   latest plan is also kept in the browser's local storage.
 
+## Three ways to keep score
+
+How people take your plan is scored three ways, side by side, because each is a
+legitimate thing to optimize and they pull against each other:
+
+- **Electability**: the approval meter. Will voters re-elect you? Each bloc's reaction
+  saturates, so once a bloc is furious more pain costs little. It rewards loading the
+  pain onto a few groups.
+- **Shared sacrifice** (0-100): how evenly the burden falls across the eight example
+  households, as a share of each one's take-home pay, counting every household
+  equally. It ignores how big the burden is: everyone losing a fifth of their pay
+  scores 100.
+- **Hardship**: the total pain, as "like every household losing X% of take-home pay".
+  Big losses count more than small ones, a dollar counts more to a poorer household,
+  and each household is weighted by roughly how many US households it stands for. It
+  barely notices a tiny group (the top 0.1%) losing a lot, so any household losing more
+  than 25% of take-home pay is flagged as "pushed to the brink".
+
+A plan tuned for one usually scores badly on another, and the win screen grades all
+three. Limitations: both household lenses count only the direct dollar effects on the
+eight example households. Losing coverage, a job or a service doesn't count unless it
+shows up as dollars for one of them, so cuts to research, roads, housing aid or
+weapons barely register. The household shares are rough estimates. Formulas are in
+`CLAUDE.md`.
+
 ## Run the tests
 
 ```sh
@@ -33,7 +58,7 @@ node --test tests/
 Node 24 or later, no dependencies. `tests/model.test.js` checks the engine against a
 small invented dataset (`tests/fixture-data.js`). `tests/data.test.js` checks the real
 `js/data.js`: it must validate, compute finite numbers everywhere, start with a
-deficit, and be winnable.
+deficit, and be winnable (including the lens challenges, using plans found by search).
 
 ## Files
 

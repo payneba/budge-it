@@ -164,9 +164,10 @@
     ],
 
     personas: [
-      { id: "retiree", name: "Walt", icon: "👴", tagline: "Retiree, Ohio", income: 40000, detail: "Lives on a pension.", federalTaxes: 1500, federalBenefits: 35000 },
-      { id: "worker_family", name: "The Garcias", icon: "👨‍👩‍👧", tagline: "Family of four, Texas", income: 75000, detail: "Two jobs, two kids.", federalTaxes: 9000, federalBenefits: 2000 },
-      { id: "business_owner", name: "Priya", icon: "👩‍💼", tagline: "Business owner, California", income: 900000, detail: "Runs a software firm.", federalTaxes: 280000, federalBenefits: 0 }
+      // take-home pay: retiree 38,500; worker_family 66,000; business_owner 620,000
+      { id: "retiree", name: "Walt", icon: "👴", tagline: "Retiree, Ohio", income: 40000, detail: "Lives on a pension.", federalTaxes: 1500, federalBenefits: 35000, share: 0.3 },
+      { id: "worker_family", name: "The Garcias", icon: "👨‍👩‍👧", tagline: "Family of four, Texas", income: 75000, detail: "Two jobs, two kids.", federalTaxes: 9000, federalBenefits: 2000, share: 0.65 },
+      { id: "business_owner", name: "Priya", icon: "👩‍💼", tagline: "Business owner, California", income: 900000, detail: "Runs a software firm.", federalTaxes: 280000, federalBenefits: 0, share: 0.05 }
     ],
 
     metrics: [

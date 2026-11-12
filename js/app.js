@@ -45,6 +45,8 @@
   const $ = (id) => document.getElementById(id);
   const fill = (node, ...kids) => node.replaceChildren(...kids.flat().filter((k) => k !== null && k !== undefined && k !== false));
   const setText = (node, text) => { if (node.textContent !== text) node.textContent = text; };
+  // An empty tone removes the attribute: [data-tone] rules must never see an unset --tone.
+  const setTone = (node, tone) => { if (tone) node.dataset.tone = tone; else delete node.dataset.tone; };
   const store = {
     get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
     set(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } }
@@ -157,9 +159,18 @@
         : `${Math.round(progress * 100)}% of the way to balanced`);
       animateTo($('statIn'), r.totalRevenue, F.moneyShort);
       animateTo($('statOut'), r.totalSpending, F.moneyShort);
-      const ap = $('statApproval');
-      setText(ap, `${Math.round(r.approval.overall)}%`);
-      ap.dataset.trend = trend(r.approval.overall - r.approval.baseline, 0.5);
+      const g = lensGrades(r);
+      const touched = r.changes.length > 0;
+      const ap = $('statElect');
+      setText(ap, fmtElect(r));
+      setTone(ap, touched ? gradeTone(g.electability) : '');
+      const fr = $('statFair');
+      setText(fr, fmtFair(r));
+      setTone(fr, touched ? gradeTone(g.fairness) : '');
+      const hd = $('statHard');
+      setText(hd, fmtHard(r) + (r.lenses.hardship.brink.length ? ' ⚠' : ''));
+      setTone(hd, touched ? gradeTone(g.hardship) : '');
+      hd.title = r.lenses.hardship.brink.length ? `${r.lenses.hardship.brink.length} household(s) pushed to the brink` : '';
       const jb = $('statJobs');
       setText(jb, Math.abs(r.jobs) < 500 ? 'No change' : F.signedPeople(r.jobs).replace(' million', 'M').replace(' billion', 'B'));
       jb.dataset.trend = trend(r.jobs, 500);
@@ -167,6 +178,61 @@
     });
   }
   const trend = (x, eps) => (x > eps ? 'up' : x < -eps ? 'down' : 'flat');
+
+  // ------------------------------------------------------------ the three lenses
+
+  const personaById = {};
+  for (const p of D.personas) personaById[p.id] = p;
+  const BRINK = M.constants.BRINK_PCT;
+  // Display rounding matches the challenge checks: fairness floors, hardship rounds up.
+  const fairScore = (r) => Math.floor(r.lenses.fairness.score + 1e-9);
+  const hardShown = (r) => Math.ceil(r.lenses.hardship.pct * 10 - 1e-9) / 10;
+  const fmtElect = (r) => `${Math.round(r.lenses.electability.score)}%`;
+  const fmtFair = (r) => String(fairScore(r));
+  const fmtHard = (r) => F.percent(hardShown(r), 1);
+  const fmtBurden = (pct) => F.percent(Math.abs(pct) < 0.05 ? 0 : pct, Math.abs(pct) >= 10 ? 0 : 1);
+  const pname = (id) => (personaById[id] ? personaById[id].name : id);
+  const picon = (id) => (personaById[id] && personaById[id].icon) || '';
+
+  function gradeElect(r) {
+    const d = r.lenses.electability.score - r.lenses.electability.baseline;
+    return d >= 2 ? 'A' : d >= -2 ? 'B' : d >= -6 ? 'C' : d >= -12 ? 'D' : 'F';
+  }
+  function gradeFair(r) {
+    const s = fairScore(r);
+    return s >= 80 ? 'A' : s >= 60 ? 'B' : s >= 40 ? 'C' : s >= 20 ? 'D' : 'F';
+  }
+  function gradeHard(r) {
+    const h = hardShown(r);
+    const g = h <= 0 ? 'A' : h <= 2 ? 'B' : h <= 5 ? 'C' : h <= 10 ? 'D' : 'F';
+    // Anyone pushed to the brink caps the grade at D, however small the average.
+    return r.lenses.hardship.brink.length && g < 'D' ? 'D' : g;
+  }
+  const lensGrades = (r) => ({ electability: gradeElect(r), fairness: gradeFair(r), hardship: gradeHard(r) });
+  const gradeTone = (g) => (g === 'A' || g === 'B' ? 'good' : g === 'C' ? 'mid' : 'bad');
+
+  // One line naming the plan's character from the three grades (no content involved).
+  function planCharacter(grades) {
+    const words = {
+      electability: { good: 'politically shrewd', bad: 'politically toxic' },
+      fairness: { good: 'evenly shared', bad: 'lopsided' },
+      hardship: { good: 'gentle on households', bad: 'painful' }
+    };
+    const goods = [], bads = [];
+    for (const k of ['electability', 'fairness', 'hardship']) {
+      const t = gradeTone(grades[k]);
+      if (t === 'good') goods.push(words[k].good);
+      if (t === 'bad') bads.push(words[k].bad);
+    }
+    const list = (a) => (a.length < 3 ? a.join(' and ') : `${a[0]}, ${a[1]} and ${a[2]}`);
+    const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    if (goods.length === 3) return 'A rare plan: politically shrewd, evenly shared and gentle on households.';
+    if (bads.length === 3) return 'Politically toxic, lopsided and painful: a plan only an accountant could love.';
+    if (!goods.length && !bads.length) return 'A middle-of-the-road plan: no scorecard loves it, none hates it.';
+    if (!bads.length) return `${cap(list(goods))}, with nothing badly wrong on the other scorecard.`;
+    if (!goods.length) return `${cap(list(bads))}, and no scorecard really likes it.`;
+    return `${cap(list(goods))}, but ${list(bads)}.`;
+  }
 
   // ------------------------------------------------------------ money flow
 
@@ -348,10 +414,10 @@
       } else if (input.checked !== v) input.checked = v;
       const y = r.leverYield[l.id];
       const yw = l.type === 'toggle' && !v ? yieldWord(toggleFull) : yieldWord(y);
-      if (typeof yw === 'string') { setText(yieldOut, yw); yieldOut.dataset.tone = ''; }
+      if (typeof yw === 'string') { setText(yieldOut, yw); setTone(yieldOut, ''); }
       else {
         setText(yieldOut, (l.type === 'toggle' && !v ? 'If on: ' : '') + yw.text);
-        yieldOut.dataset.tone = l.type === 'toggle' && !v ? '' : (yw.good ? 'good' : 'bad');
+        setTone(yieldOut, l.type === 'toggle' && !v ? '' : (yw.good ? 'good' : 'bad'));
       }
       const st = r.storyById[l.id];
       story.hidden = !st;
@@ -409,7 +475,7 @@
       animateTo(now, amount, F.money);
       const d = amount - s.baseline;
       setText(delta, Math.abs(d) < 0.05 ? `Was ${F.money(s.baseline)}` : `${F.signedMoney(d)} from ${F.money(s.baseline)}`);
-      delta.dataset.tone = Math.abs(d) < 0.05 ? '' : d < 0 ? 'good' : 'bad';
+      setTone(delta, Math.abs(d) < 0.05 ? '' : d < 0 ? 'good' : 'bad');
       if (s.locked) {
         setText(effect, Math.abs(r.interestChange) < 0.05 ? 'Unchanged so far.' :
           `${r.interestChange < 0 ? 'Down' : 'Up'} ${F.money(Math.abs(r.interestChange))} this year because of your plan, and the change compounds over time.`);
@@ -419,7 +485,7 @@
         setText(out, v === 0 ? 'No change' : fmtPct(v));
         const dollars = s.baseline * v / 100;
         setText(effect, v === 0 ? `${F.money(s.baseline)} a year now` : `${F.signedMoney(dollars)} a year, ${perHousehold(dollars)}`);
-        effect.dataset.tone = v === 0 ? '' : v < 0 ? 'good' : 'bad';
+        setTone(effect, v === 0 ? '' : v < 0 ? 'good' : 'bad');
         resetBtn.disabled = v === 0 && levers.every((l) => state.levers[l.id] === DEFAULTS.levers[l.id]);
       }
       const st = r.storyById[s.id];
@@ -452,7 +518,7 @@
       animateTo(now, amount, F.money);
       const d = amount - rv.baseline;
       setText(delta, Math.abs(d) < 0.05 ? `Was ${F.money(rv.baseline)}` : `${F.signedMoney(d)} from ${F.money(rv.baseline)}`);
-      delta.dataset.tone = Math.abs(d) < 0.05 ? '' : d > 0 ? 'good' : 'bad';
+      setTone(delta, Math.abs(d) < 0.05 ? '' : d > 0 ? 'good' : 'bad');
       card.classList.toggle('is-changed', levers.some((l) => r.leverYield[l.id] !== 0));
     });
     return card;
@@ -508,13 +574,14 @@
     for (const p of D.personas) {
       const delta = el('span', { class: 'persona-delta' });
       const pct = el('span', { class: 'persona-pct' });
+      const brink = el('span', { class: 'persona-brink', hidden: true }, 'Pushed to the brink');
       const list = el('ul', { class: 'breakdown' });
       const det = el('details', { class: 'persona-why' }, el('summary', {}, 'What’s driving this'), list);
       const card = el('article', { class: 'persona', id: 'persona-' + p.id },
         el('div', { class: 'persona-top' },
           el('span', { class: 'persona-icon', 'aria-hidden': 'true' }, p.icon || ''),
           el('div', {}, el('h3', { class: 'persona-name' }, p.name), el('p', { class: 'persona-tag' }, p.tagline || ''))),
-        el('div', { class: 'persona-change' }, delta, el('span', { class: 'persona-unit' }, 'a year'), pct),
+        el('div', { class: 'persona-change' }, delta, el('span', { class: 'persona-unit' }, 'a year'), pct, brink),
         p.detail ? el('details', { class: 'persona-about' }, el('summary', {}, 'Who they are'), el('p', { class: 'persona-detail' }, p.detail)) : null,
         el('dl', { class: 'persona-facts' },
           el('div', {}, el('dt', {}, 'Income'), el('dd', {}, F.dollars(p.income))),
@@ -525,13 +592,177 @@
       onUpdate((r) => {
         const pr = r.personas[p.id];
         animateTo(delta, pr.delta, (v) => (Math.abs(v) < 0.5 ? '$0' : F.signedDollars(v)));
-        card.dataset.tone = pr.delta > 0.5 ? 'good' : pr.delta < -0.5 ? 'bad' : '';
-        setText(pct, p.income > 0 && Math.abs(pr.delta) >= 0.5 ? `${F.percent(100 * Math.abs(pr.delta) / p.income)} of income` : 'No change yet');
+        setTone(card, pr.delta > 0.5 ? 'good' : pr.delta < -0.5 ? 'bad' : '');
+        const b = r.lenses.hardship.byPersona[p.id].burdenPct;
+        setText(pct, Math.abs(pr.delta) < 0.5 ? 'No change yet'
+          : `${b > 0 ? 'Loses' : 'Gains'} ${fmtBurden(Math.abs(b))} of take-home pay`);
+        const onBrink = r.lenses.hardship.brink.includes(p.id);
+        brink.hidden = !onBrink;
+        brink.title = onBrink ? `Loses more than ${BRINK}% of take-home pay` : '';
+        card.classList.toggle('is-brink', onBrink);
         det.hidden = pr.breakdown.length === 0;
         list.replaceChildren(...pr.breakdown.slice(0, 8).map((b) =>
           el('li', { 'data-tone': b.amount > 0 ? 'good' : 'bad' }, el('span', {}, `${b.icon ? b.icon + ' ' : ''}${b.name}`), el('span', { class: 'num' }, F.signedDollars(b.amount)))));
       });
     }
+  }
+
+  // ------------------------------------------------------------ three ways to keep score
+
+  function buildLenses() {
+    const box = $('lenses'), moveBox = $('lensMove');
+    const LENSES = [
+      {
+        key: 'electability', name: 'Electability', q: 'Will they re-elect you?', dir: 'Higher is better',
+        what: 'Rewards keeping the big voting blocs happy. It saturates: once a bloc is furious, more pain costs you little, so it ignores how hard the angriest groups are hit.',
+        value: fmtElect, raw: (r) => r.lenses.electability.score, better: 1, eps: 0.5,
+        fmtDelta: (d) => `${Math.abs(d).toFixed(0)} pt${Math.abs(d) >= 1.5 ? 's' : ''}`
+      },
+      {
+        key: 'fairness', name: 'Shared sacrifice', q: 'Are we all in this together?', dir: 'Higher is better, out of 100',
+        what: 'Rewards spreading the burden evenly as a share of take-home pay, counting every household equally however small. It ignores how big the burden is: everyone losing a fifth of their pay scores a perfect 100.',
+        value: fmtFair, raw: (r) => r.lenses.fairness.score, better: 1, eps: 0.5,
+        fmtDelta: (d) => `${Math.abs(d).toFixed(0)}`
+      },
+      {
+        key: 'hardship', name: 'Hardship', q: 'How much does it hurt, overall?', dir: 'Lower is better',
+        what: 'Rewards keeping total pain low: big losses count far more than small ones, a dollar matters more to a poorer household, and each household counts by how many it stands for. It barely notices a small group losing a lot.',
+        value: fmtHard, raw: (r) => r.lenses.hardship.pct, better: -1, eps: 0.05,
+        fmtDelta: (d) => `${Math.abs(d).toFixed(1)} pts`
+      }
+    ];
+
+    // Electability detail: compact bloc bars.
+    const blocMini = el('div', { class: 'lens-blocs' });
+    const blocCells = D.blocs.map((b) => {
+      const fillN = el('span', { class: 'mini-fill' });
+      const num = el('span', { class: 'mini-num' });
+      const cell = el('div', { class: 'mini-bloc', title: b.name },
+        el('span', { class: 'mini-icon', 'aria-hidden': 'true' }, b.icon || ''),
+        el('span', { class: 'sr-only' }, b.name),
+        el('span', { class: 'mini-bar', 'aria-hidden': 'true' }, fillN), num);
+      blocMini.appendChild(cell);
+      return { b, fillN, num, cell };
+    });
+
+    // Shared-sacrifice detail: every household on one burden scale, plus lightest/hardest.
+    const strip = el('div', { class: 'burden-strip', role: 'img' });
+    const zero = el('span', { class: 'strip-zero', 'aria-hidden': 'true' });
+    const loLab = el('span', { class: 'strip-lab strip-lo', 'aria-hidden': 'true' });
+    const hiLab = el('span', { class: 'strip-lab strip-hi', 'aria-hidden': 'true' });
+    strip.append(el('span', { class: 'strip-axis', 'aria-hidden': 'true' }), zero, loLab, hiLab);
+    const dots = D.personas.map((p) => {
+      const dot = el('span', { class: 'strip-dot', 'aria-hidden': 'true', title: p.name }, p.icon || '•');
+      strip.appendChild(dot);
+      return { p, dot };
+    });
+    const fairText = el('p', { class: 'lens-fact' });
+
+    // Hardship detail.
+    const hardText = el('p', { class: 'lens-fact' });
+    const brinkList = el('ul', { class: 'lens-brink' });
+
+    const cards = LENSES.map((L) => {
+      const score = el('span', { class: 'lens-score' });
+      const grade = el('span', { class: 'lens-delta' });
+      const detail = L.key === 'electability'
+        ? el('div', { class: 'lens-detail' }, blocMini, el('p', { class: 'lens-fact lens-more' }, 'Every bloc in detail under "What voters think".'))
+        : L.key === 'fairness' ? el('div', { class: 'lens-detail' }, strip, fairText)
+        : el('div', { class: 'lens-detail' }, hardText, brinkList);
+      const card = el('article', { class: 'lens', 'data-lens': L.key },
+        el('header', { class: 'lens-head' },
+          el('div', { class: 'lens-titles' }, el('h3', { class: 'lens-name' }, L.name), el('span', { class: 'lens-q' }, L.q)),
+          el('div', { class: 'lens-num' }, score, el('span', { class: 'lens-dir' }, L.dir), grade)),
+        el('p', { class: 'lens-what' }, L.what),
+        detail);
+      box.appendChild(card);
+      return { L, card, score, grade };
+    });
+
+    let prev = null, lastShown = null;
+    onUpdate((r) => {
+      const grades = lensGrades(r);
+      const touched = r.changes.length > 0;
+      const now = LENSES.map((L) => L.raw(r));
+      // What the most recent change did to each lens. A recompute without a state
+      // change (resize, re-render) keeps showing the last real move.
+      if (prev && now.some((v, i) => Math.abs(v - prev[i]) > 1e-9)) lastShown = now.map((v, i) => v - prev[i]);
+      if (!touched) lastShown = null;
+      prev = now;
+      cards.forEach((c, i) => {
+        setText(c.score, c.L.value(r));
+        setTone(c.card, touched ? gradeTone(grades[c.L.key]) : '');
+        const d = lastShown ? lastShown[i] : 0;
+        const moved = lastShown && Math.abs(d) >= c.L.eps;
+        c.grade.hidden = !moved;
+        if (moved) {
+          const good = d * c.L.better > 0;
+          setText(c.grade, `${d > 0 ? '▲' : '▼'} ${c.L.fmtDelta(d)} last move`);
+          setTone(c.grade, good ? 'good' : 'bad');
+        }
+      });
+      // Headline strip: which lenses the last move helped and hurt.
+      if (!lastShown) {
+        setTone(moveBox, '');
+        fill(moveBox,
+          el('p', { class: 'lens-move-text' }, touched ? 'Make a move to see which scorecards it helps and which it hurts.' : 'Nothing has changed yet, so every scorecard sits at its starting point. Make a move to see which ones it helps and which it hurts.'),
+          touched ? el('p', { class: 'lens-character' }, planCharacter(grades)) : null);
+      } else {
+        const helped = [], hurt = [];
+        LENSES.forEach((L, i) => {
+          if (Math.abs(lastShown[i]) < L.eps) return;
+          (lastShown[i] * L.better > 0 ? helped : hurt).push(L.name);
+        });
+        const join = (a) => (a.length < 3 ? a.join(' and ') : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`);
+        const text = helped.length && hurt.length ? `Your last move helped ${join(helped)} but hurt ${join(hurt)}.`
+          : helped.length ? `Your last move helped ${join(helped)}.`
+          : hurt.length ? `Your last move hurt ${join(hurt)}.` : 'Your last move barely registered on any scorecard.';
+        const tone = helped.length && hurt.length ? 'mid' : helped.length ? 'good' : hurt.length ? 'bad' : '';
+        setTone(moveBox, tone);
+        fill(moveBox,
+          el('p', { class: 'lens-move-text', 'data-tone': tone || undefined }, text),
+          touched ? el('p', { class: 'lens-character' }, planCharacter(grades)) : null);
+      }
+
+      for (const x of blocCells) {
+        const br = r.approval.byBloc[x.b.id];
+        x.fillN.style.transform = `scaleX(${br.value / 100})`;
+        setText(x.num, `${Math.round(br.value)}`);
+        setTone(x.cell, br.delta > 0.5 ? 'good' : br.delta < -0.5 ? 'bad' : '');
+        x.cell.title = `${x.b.name}: ${Math.round(br.value)}% approve`;
+      }
+
+      const F2 = r.lenses.fairness, H = r.lenses.hardship;
+      const burdens = D.personas.map((p) => H.byPersona[p.id].burdenPct);
+      const lo = Math.max(-100, Math.min(-5, ...burdens)), hi = Math.min(100, Math.max(5, ...burdens));
+      const pos = (v) => (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * 100;
+      zero.style.left = pos(0) + '%';
+      setText(loLab, `${lo < 0 ? 'gain ' : ''}${F.percent(Math.abs(lo), 0)}`);
+      setText(hiLab, `lose ${F.percent(hi, 0)}`);
+      dots.forEach(({ p, dot }, i) => {
+        dot.style.left = pos(burdens[i]) + '%';
+        dot.title = `${p.name}: ${burdens[i] >= 0 ? 'loses' : 'gains'} ${fmtBurden(Math.abs(burdens[i]))} of take-home pay`;
+        dot.classList.toggle('is-brink', H.brink.includes(p.id));
+      });
+      strip.setAttribute('aria-label', `Burden as a share of take-home pay: ${D.personas.map((p, i) => `${p.name} ${burdens[i] >= 0 ? 'loses' : 'gains'} ${fmtBurden(Math.abs(burdens[i]))}`).join('; ')}.`);
+      const spread = F2.hardest.burdenPct - F2.lightest.burdenPct;
+      if (spread < 0.05) setText(fairText, touched ? 'Every household is hit by the same share of its take-home pay.' : 'No household has gained or lost anything yet.');
+      else {
+        const side = (x) => (x.burdenPct >= 0.05 ? `loses ${fmtBurden(x.burdenPct)}` : x.burdenPct <= -0.05 ? `gains ${fmtBurden(-x.burdenPct)}` : 'is untouched');
+        setText(fairText, `Lightest hit: ${picon(F2.lightest.id)} ${pname(F2.lightest.id)} ${side(F2.lightest)}. Hardest hit: ${picon(F2.hardest.id)} ${pname(F2.hardest.id)} ${side(F2.hardest)}. Spread: ${F2.sd.toFixed(1)} points.`);
+      }
+
+      const hp = hardShown(r);
+      setText(hardText, Math.abs(hp) < 0.05 ? (touched ? 'On balance, about the same as no household gaining or losing anything.' : 'No household has gained or lost anything yet.')
+        : hp > 0 ? `Like every household losing ${F.percent(hp, 1)} of its take-home pay.`
+        : `Like every household gaining ${F.percent(-hp, 1)} of its take-home pay: on net, households come out ahead.`);
+      if (!H.brink.length) {
+        brinkList.replaceChildren(el('li', { class: 'brink-none' }, `No household loses more than ${BRINK}% of its take-home pay.`));
+      } else {
+        brinkList.replaceChildren(...H.brink.map((id) => el('li', { class: 'brink-item' },
+          el('span', { class: 'brink-tag' }, 'Brink'), `${picon(id)} ${pname(id)} loses ${fmtBurden(H.byPersona[id].burdenPct)} of take-home pay.`)));
+      }
+    });
   }
 
   // ------------------------------------------------------------ approval
@@ -568,7 +799,7 @@
         const br = r.approval.byBloc[x.b.id];
         setText(x.num, `${Math.round(br.value)}%`);
         x.fill.style.transform = `scaleX(${br.value / 100})`;
-        x.row.dataset.tone = br.delta > 0.5 ? 'good' : br.delta < -0.5 ? 'bad' : '';
+        setTone(x.row, br.delta > 0.5 ? 'good' : br.delta < -0.5 ? 'bad' : '');
         x.row.querySelector('.bloc-bar').setAttribute('aria-valuenow', String(Math.round(br.value)));
         const top = br.drivers.filter((d) => Math.abs(d.points) >= 0.5).slice(0, 2);
         setText(x.why, top.length ? top.map((d) => `${d.name} ${d.points > 0 ? '+' : '−'}${Math.abs(d.points).toFixed(0)}`).join(', ') : '');
@@ -592,7 +823,7 @@
         setText(val, F.metric(mr.value, m.format));
         const tiny = Math.abs(mr.delta) < (m.format === 'percent' ? 0.05 : 0.5);
         const good = (mr.delta < 0) === (m.goodDirection === 'down');
-        tile.dataset.tone = tiny ? '' : good ? 'good' : 'bad';
+        setTone(tile, tiny ? '' : good ? 'good' : 'bad');
         setText(dl, tiny ? 'No change' : `${mr.delta > 0 ? '▲' : '▼'} ${F.signedMetric(mr.delta, m.format)}`);
       });
     }
@@ -603,7 +834,7 @@
     onUpdate((r) => {
       setText(gv, F.percent(r.gdpPct, 2));
       const tiny = Math.abs(r.gdpPct) < 0.005;
-      gt.dataset.tone = tiny ? '' : r.gdpPct > 0 ? 'good' : 'bad';
+      setTone(gt, tiny ? '' : r.gdpPct > 0 ? 'good' : 'bad');
       setText(gd, tiny ? 'No change' : `${r.jobs > 0 ? '▲' : '▼'} ${F.signedPeople(r.jobs)} jobs`);
     });
   }
@@ -669,7 +900,7 @@
       baseLab.setAttribute('x', W - P.r + 6); baseLab.setAttribute('y', yb + 4); baseLab.textContent = `${F.percent(last.baselineDebtPctGdp, 0)}`;
       planLab.setAttribute('x', W - P.r + 6); planLab.setAttribute('y', yp + 4); planLab.textContent = `${F.percent(last.planDebtPctGdp, 0)}`;
       const better = last.planDebtPctGdp < last.baselineDebtPctGdp - 0.5, worse = last.planDebtPctGdp > last.baselineDebtPctGdp + 0.5;
-      svg.dataset.tone = better ? 'good' : worse ? 'bad' : '';
+      setTone(svg, better ? 'good' : worse ? 'bad' : '');
       desc.textContent = `Debt reaches ${F.percent(last.baselineDebtPctGdp, 0)} of GDP by ${last.year} under current law and ${F.percent(last.planDebtPctGdp, 0)} under your plan.`;
       table.replaceChildren(
         el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Year'), el('th', { scope: 'col' }, 'Current law'), el('th', { scope: 'col' }, 'Your plan'))),
@@ -790,6 +1021,8 @@
     if (Array.isArray(rules.protect) && rules.protect.length) out.push(['protect', `Don't cut ${rules.protect.map(name).join(', ')}`]);
     if (typeof rules.minApproval === 'number') out.push(['minApproval', `Keep approval at ${rules.minApproval}% or higher`]);
     if (typeof rules.maxUnemploymentJobsLost === 'number') out.push(['maxUnemploymentJobsLost', `Lose no more than ${F.people(rules.maxUnemploymentJobsLost)} jobs`]);
+    if (typeof rules.minFairness === 'number') out.push(['minFairness', `Keep shared sacrifice at ${rules.minFairness} or higher`]);
+    if (typeof rules.maxHardship === 'number') out.push(['maxHardship', `Keep hardship at ${F.percent(rules.maxHardship, 1)} of take-home pay or less`]);
     return out;
   }
   function buildChallenges() {
@@ -822,10 +1055,6 @@
   }
   // ------------------------------------------------------------ win state
 
-  function gradeApproval(r) {
-    const d = r.approval.overall - r.approval.baseline;
-    return d >= 2 ? 'A' : d >= -2 ? 'B' : d >= -6 ? 'C' : d >= -12 ? 'D' : 'F';
-  }
   function gradeJobs(r) {
     const j = r.jobs;
     return j >= 0 ? 'A' : j > -250e3 ? 'B' : j > -750e3 ? 'C' : j > -1.5e6 ? 'D' : 'F';
@@ -836,18 +1065,29 @@
     const raised = mix.taxUp - mix.taxDown, cut = mix.cuts - mix.adds;
     const total = Math.max(1e-9, Math.max(0, raised) + Math.max(0, cut));
     const taxShare = Math.round(100 * Math.max(0, raised) / total);
-    const hurt = D.personas.map((p) => ({ p, d: r.personas[p.id].delta })).sort((a, b) => a.d / Math.max(1, a.p.income) - b.d / Math.max(1, b.p.income));
+    const burdenOf = (p) => r.lenses.hardship.byPersona[p.id].burdenPct;
+    const hurt = D.personas.map((p) => ({ p, d: r.personas[p.id].delta, b: burdenOf(p) })).sort((a, b) => b.b - a.b);
     const worst = hurt[0], best = hurt[hurt.length - 1];
+    const grades = lensGrades(r);
+    const L = r.lenses;
     const last = r.projection[r.projection.length - 1];
     $('winLead').textContent = r.deficit < -M.constants.BALANCE_TOLERANCE
       ? `Your plan runs a ${F.money(-r.deficit)} surplus this year.` : 'Revenue now covers every dollar of spending.';
     const ch = (D.challenges || []).find((c) => c.id === challengeId);
     const chRes = ch ? M.checkChallenge(D, state, r, ch) : null;
     const row = (grade, title, text) => el('div', { class: 'report-row' }, el('span', { class: 'grade', 'data-grade': grade }, grade), el('div', {}, el('h3', {}, title), el('p', {}, text)));
-    const bigPayer = worst && worst.d < -0.5 ? `${worst.p.name} gives up the most: ${F.dollars(-worst.d)} a year, ${F.percent(100 * -worst.d / Math.max(1, worst.p.income))} of their income.` : 'No household in the game loses money.';
+    const bigPayer = worst && worst.d < -0.5 ? `${worst.p.name} gives up the most: ${F.dollars(-worst.d)} a year, ${fmtBurden(worst.b)} of their take-home pay.` : 'No household in the game loses money.';
     const gainer = best && best.d > 0.5 ? ` ${best.p.name} comes out ahead by ${F.dollars(best.d)}.` : '';
+    const brinkNames = L.hardship.brink.map(pname);
+    const fairLine = L.fairness.hardest.burdenPct - L.fairness.lightest.burdenPct < 0.05
+      ? 'Every household carries the same share of its take-home pay.'
+      : `${pname(L.fairness.lightest.id)} ${L.fairness.lightest.burdenPct >= 0 ? 'loses' : 'gains'} ${fmtBurden(Math.abs(L.fairness.lightest.burdenPct))} of take-home pay; ${pname(L.fairness.hardest.id)} loses ${fmtBurden(L.fairness.hardest.burdenPct)}.`;
     fill($('report'),
-      row(gradeApproval(r), 'Voters', `Approval is ${Math.round(r.approval.overall)}%, compared with ${Math.round(r.approval.baseline)}% when you started.`),
+      el('p', { class: 'report-character' }, planCharacter(grades)),
+      row(grades.electability, 'Electability', `Approval is ${Math.round(L.electability.score)}%, compared with ${Math.round(L.electability.baseline)}% when you started.`),
+      row(grades.fairness, 'Shared sacrifice', `Scores ${fmtFair(r)} out of 100. ${fairLine}`),
+      row(grades.hardship, 'Hardship', (hardShown(r) > 0 ? `Like every household losing ${fmtHard(r)} of its take-home pay.` : hardShown(r) < 0 ? `Like every household gaining ${F.percent(-hardShown(r), 1)} of its take-home pay.` : 'Households come out about even overall.') +
+        (brinkNames.length ? ` Pushed to the brink: ${brinkNames.join(', ')}.` : '')),
       row(gradeJobs(r), 'Jobs', Math.abs(r.jobs) < 500 ? 'No change in jobs in the short run.' : `${F.signedPeople(r.jobs)} jobs in the short run, as the economy ${r.jobs < 0 ? 'cools' : 'heats up'} by ${F.percent(Math.abs(r.gdpPct), 2)}.`),
       el('div', { class: 'report-row' }, el('span', { class: 'grade grade-mix', 'aria-hidden': 'true' }, `${taxShare}%`), el('div', {},
         el('h3', {}, 'Who paid'),
@@ -915,6 +1155,7 @@
   buildViews();
   buildControls();
   buildFrontPage();
+  buildLenses();
   buildPersonas();
   buildApproval();
   buildMetrics();
