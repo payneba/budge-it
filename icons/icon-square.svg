@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed source for the PNG app icons (iOS and Android round the corners themselves). -->
+  <rect width="512" height="512" fill="#1f5e47"/>
+  <text x="256" y="296" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="310" text-anchor="middle" fill="#fffdf7">$</text>
+  <rect x="106" y="392" width="300" height="22" rx="11" fill="#fffdf7" opacity="0.35"/>
+  <rect x="106" y="392" width="196" height="22" rx="11" fill="#fffdf7"/>
+  <circle cx="302" cy="403" r="36" fill="#d9483b" stroke="#fffdf7" stroke-width="12"/>
+</svg>

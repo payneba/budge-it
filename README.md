@@ -110,6 +110,7 @@ engine's rules, and the conventions for adding a game.
 | `games/ledger/` | The Ledger: `index.html`, `app.js`, `style.css` |
 | `games/crowd/` | The Crowd: `people.js` (who is in the crowd and what they care about), `crowd-model.js` (simulation), `crowd.js` (canvas and controls), `index.html`, `style.css` |
 | `tests/` | `node:test` suites and a small fixture dataset |
+| `icons/`, `manifest.webmanifest` | Browser tab, bookmark and home-screen icons. The PNGs are rendered from `icons/icon-square.svg` |
 | `CLAUDE.md` | Data schema, engine semantics, rules for adding a game |
 
 Everything is vanilla JavaScript loaded with classic `<script>` tags, so each game
