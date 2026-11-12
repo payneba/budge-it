@@ -559,7 +559,7 @@
       },
       {
         id: "social_security_payroll", name: "Social Security payroll tax", icon: "💼", baseline: 1341.5,
-        blurb: "12.4% of wages (half from the worker, half from the employer) up to $184,500 in 2026. It goes straight into the Social Security trust funds.",
+        blurb: "12.4% of wages (half from the worker, half from the employer) up to $184,500 in 2026. It pays for today's retirees' checks. Any surplus is lent to the rest of the government, and that loan balance is the \"trust fund\".",
         facts: [
           "Raises $1.34 trillion, enough to pay about 80% of Social Security benefits",
           "Earnings above $184,500 a year are not taxed for Social Security",
