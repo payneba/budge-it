@@ -14,7 +14,9 @@ runs offline.
 
 ## Play
 
-Download or clone the repo and open `index.html` in a browser, then pick a game.
+**[Play it in your browser](https://payneba.github.io/budge-it/)**
+
+Or run it locally: download or clone the repo and open `index.html`.
 
 ```sh
 git clone https://github.com/payneba/budge-it.git
@@ -174,3 +176,7 @@ The full schema is in `CLAUDE.md`.
   services, jobs and non-monetary worries.
 - Balancing in a single year is harsher than any real plan, which would phase in over
   a decade or more.
+
+## License
+
+[MIT](LICENSE)
