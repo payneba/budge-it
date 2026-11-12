@@ -114,7 +114,9 @@ a { color: var(--note); }
   font: 700 20px/1 var(--font-money);
   box-shadow: inset 0 0 0 3px var(--surface), inset 0 0 0 4px var(--note);
 }
-.sb-title { font: 700 19px/1 var(--font-money); letter-spacing: 0.01em; }
+.sb-title { font: 700 19px/1 var(--font-money); letter-spacing: 0.01em; color: inherit; text-decoration: none; }
+a.sb-title:hover, a.sb-title:focus-visible { text-decoration: underline; }
+.about-home { margin: 16px 0 0; }
 .sb-help {
   width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--rule-strong);
   background: transparent; color: var(--ink-2); font-weight: 700; font-size: 13px; padding: 0;

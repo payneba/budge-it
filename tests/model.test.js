@@ -216,7 +216,7 @@ test('headline selection by priority', () => {
   const d = clone(FIXTURE);
   assert.equal(M.compute(d, M.defaultState(d)).headline.text, 'CONGRESS RETURNS TO WORK');
   assert.equal(M.compute(d, stateWith(d, {}, { wealth_tax: true })).headline.text, 'WEALTH TAX PASSES');
-  assert.equal(M.compute(d, stateWith(d, { pensions: -20 }, { wealth_tax: true })).headline.text, 'SENIORS STORM CAPITOL');
+  assert.equal(M.compute(d, stateWith(d, { pensions: -20 }, { wealth_tax: true })).headline.text, 'SENIORS MARCH ON CAPITOL');
   assert.equal(M.compute(d, stateWith(d, {}, { top_rate: 45 })).headline.text, 'TOP RATE SOARS');
   const balanced = M.compute(d, stateWith(d, { schools: -60, health: -40, defense: -50 }));
   assert.ok(balanced.balanced);

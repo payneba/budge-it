@@ -370,7 +370,7 @@
     const inputId = 'in-' + l.id;
     const yieldOut = el('span', { class: 'lever-yield' });
     const story = el('p', { class: 'story', hidden: true });
-    const source = l.source ? el('p', { class: 'source' }, 'Estimate: ', l.source) : null;
+    const source = l.source ? el('p', { class: 'source' }, 'Source: ', l.source) : null;
     let input, valueOut, resetBtn;
     if (l.type === 'slider') {
       valueOut = el('output', { class: 'lever-value', for: inputId });
@@ -741,15 +741,15 @@
       setText(hiLab, `lose ${F.percent(hi, 0)}`);
       dots.forEach(({ p, dot }, i) => {
         dot.style.left = pos(burdens[i]) + '%';
-        dot.title = `${p.name}: ${burdens[i] >= 0 ? 'loses' : 'gains'} ${fmtBurden(Math.abs(burdens[i]))} of take-home pay`;
+        dot.title = `${p.name}: ${burdens[i] >= 0 ? '−' : '+'}${fmtBurden(Math.abs(burdens[i]))} of take-home pay`;
         dot.classList.toggle('is-brink', H.brink.includes(p.id));
       });
-      strip.setAttribute('aria-label', `Burden as a share of take-home pay: ${D.personas.map((p, i) => `${p.name} ${burdens[i] >= 0 ? 'loses' : 'gains'} ${fmtBurden(Math.abs(burdens[i]))}`).join('; ')}.`);
+      strip.setAttribute('aria-label', `Burden as a share of take-home pay: ${D.personas.map((p, i) => `${p.name}, ${burdens[i] >= 0 ? 'minus' : 'plus'} ${fmtBurden(Math.abs(burdens[i]))}`).join('; ')}.`);
       const spread = F2.hardest.burdenPct - F2.lightest.burdenPct;
       if (spread < 0.05) setText(fairText, touched ? 'Every household is hit by the same share of its take-home pay.' : 'No household has gained or lost anything yet.');
       else {
-        const side = (x) => (x.burdenPct >= 0.05 ? `loses ${fmtBurden(x.burdenPct)}` : x.burdenPct <= -0.05 ? `gains ${fmtBurden(-x.burdenPct)}` : 'is untouched');
-        setText(fairText, `Lightest hit: ${picon(F2.lightest.id)} ${pname(F2.lightest.id)} ${side(F2.lightest)}. Hardest hit: ${picon(F2.hardest.id)} ${pname(F2.hardest.id)} ${side(F2.hardest)}. Spread: ${F2.sd.toFixed(1)} points.`);
+        const side = (x) => (x.burdenPct >= 0.05 ? `−${fmtBurden(x.burdenPct)} of take-home pay` : x.burdenPct <= -0.05 ? `+${fmtBurden(-x.burdenPct)} of take-home pay` : 'untouched');
+        setText(fairText, `Lightest hit: ${picon(F2.lightest.id)} ${pname(F2.lightest.id)}, ${side(F2.lightest)}. Hardest hit: ${picon(F2.hardest.id)} ${pname(F2.hardest.id)}, ${side(F2.hardest)}. Spread: ${F2.sd.toFixed(1)} points.`);
       }
 
       const hp = hardShown(r);
@@ -760,7 +760,7 @@
         brinkList.replaceChildren(el('li', { class: 'brink-none' }, `No household loses more than ${BRINK}% of its take-home pay.`));
       } else {
         brinkList.replaceChildren(...H.brink.map((id) => el('li', { class: 'brink-item' },
-          el('span', { class: 'brink-tag' }, 'Brink'), `${picon(id)} ${pname(id)} loses ${fmtBurden(H.byPersona[id].burdenPct)} of take-home pay.`)));
+          el('span', { class: 'brink-tag' }, 'Brink'), `${picon(id)} ${pname(id)}: −${fmtBurden(H.byPersona[id].burdenPct)} of take-home pay.`)));
       }
     });
   }
@@ -1076,12 +1076,13 @@
     const ch = (D.challenges || []).find((c) => c.id === challengeId);
     const chRes = ch ? M.checkChallenge(D, state, r, ch) : null;
     const row = (grade, title, text) => el('div', { class: 'report-row' }, el('span', { class: 'grade', 'data-grade': grade }, grade), el('div', {}, el('h3', {}, title), el('p', {}, text)));
-    const bigPayer = worst && worst.d < -0.5 ? `${worst.p.name} gives up the most: ${F.dollars(-worst.d)} a year, ${fmtBurden(worst.b)} of their take-home pay.` : 'No household in the game loses money.';
-    const gainer = best && best.d > 0.5 ? ` ${best.p.name} comes out ahead by ${F.dollars(best.d)}.` : '';
+    const bigPayer = worst && worst.d < -0.5 ? `Biggest loss: ${worst.p.name}, ${F.dollars(-worst.d)} a year (${fmtBurden(worst.b)} of take-home pay).` : 'No household in the game loses money.';
+    const gainer = best && best.d > 0.5 ? ` Biggest gain: ${best.p.name}, ${F.dollars(best.d)} a year.` : '';
     const brinkNames = L.hardship.brink.map(pname);
+    const signedBurden = (b) => `${b >= 0 ? '−' : '+'}${fmtBurden(Math.abs(b))}`;
     const fairLine = L.fairness.hardest.burdenPct - L.fairness.lightest.burdenPct < 0.05
       ? 'Every household carries the same share of its take-home pay.'
-      : `${pname(L.fairness.lightest.id)} ${L.fairness.lightest.burdenPct >= 0 ? 'loses' : 'gains'} ${fmtBurden(Math.abs(L.fairness.lightest.burdenPct))} of take-home pay; ${pname(L.fairness.hardest.id)} loses ${fmtBurden(L.fairness.hardest.burdenPct)}.`;
+      : `Lightest hit: ${pname(L.fairness.lightest.id)}, ${signedBurden(L.fairness.lightest.burdenPct)} of take-home pay. Hardest hit: ${pname(L.fairness.hardest.id)}, ${signedBurden(L.fairness.hardest.burdenPct)}.`;
     fill($('report'),
       el('p', { class: 'report-character' }, planCharacter(grades)),
       row(grades.electability, 'Electability', `Approval is ${Math.round(L.electability.score)}%, compared with ${Math.round(L.electability.baseline)}% when you started.`),

@@ -19,11 +19,9 @@
       revenueFeedbackPerGdpPct: 54,  // receipts are 16.8% of GDP: 1% of GDP ($321B) x 0.168
       jobsPerGdpPct: 1.0e6,          // Okun's law: 1% of GDP ~ 0.5 pt unemployment ~ 0.85M jobs, plus participation
       sources: [
-        { label: "US Treasury, Monthly Treasury Statement, September 2026 (FY2026 year-end, tables 4, 5, 9)", url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/mts/mts_table_9?filter=record_date:eq:2026-09-30" },
-        { label: "Treasury Fiscal Data: MTS table 5 (outlays by agency and account), September 2026", url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/mts/mts_table_5?filter=record_date:eq:2026-09-30" },
-        { label: "Treasury Fiscal Data: MTS table 4 (receipts by source), September 2026", url: "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/mts/mts_table_4?filter=record_date:eq:2026-09-30" },
+        { label: "US Treasury, Monthly Treasury Statement, September 2026 (FY2026 year-end): table 4 (receipts by source), table 5 (outlays by agency and account), table 9 (outlays by function)", url: "https://fiscaldata.treasury.gov/datasets/monthly-treasury-statement/" },
         { label: "CBO, Monthly Budget Review: Summary for Fiscal Year 2026 (Nov 2026)", url: "https://www.cbo.gov/publication/61986" },
-        { label: "American Action Forum, summary of CBO's FY2026 Monthly Budget Review (deficit 6.2% of GDP, debt 100% of GDP)", url: "https://www.americanactionforum.org/insight/cbo-fy-2026-budget-deficit-totaled-2-trillion/" },
+        { label: "American Action Forum, summary of CBO's FY2026 Monthly Budget Review (where the deficit-to-GDP, debt-to-GDP and corporate-tax-decline figures were read)", url: "https://www.americanactionforum.org/insight/cbo-fy-2026-budget-deficit-totaled-2-trillion/" },
         { label: "CBO, Options for Reducing the Deficit: 2025 to 2034 (Dec 2024)", url: "https://www.cbo.gov/system/files/2024-12/60557-budget-options.pdf" },
         { label: "CRFB, CBO's Revenue Savings Options (scores restated for FY2026-2035)", url: "https://www.crfb.org/blogs/cbos-revenue-savings-options" },
         { label: "CRFB, CBO's Options to Improve Social Security Solvency", url: "https://www.crfb.org/blogs/cbos-options-improve-social-security-solvency" },
@@ -33,9 +31,9 @@
         { label: "KFF, Midterm Election Update: The ACA Marketplaces (enhanced credits expired)", url: "https://www.kff.org/elections/midterm-election-update-the-affordable-care-act-marketplaces/" },
         { label: "KFF, Work requirement provisions in the 2025 reconciliation law", url: "https://www.kff.org/medicaid/issue-brief/a-closer-look-at-the-work-requirement-provisions-in-the-2025-federal-budget-reconciliation-law/" },
         { label: "Marketplace, The tariffs that remain after the Supreme Court ruling (Feb 2026)", url: "https://www.marketplace.org/story/2026/02/23/the-tariffs-that-remain-after-scotus-ruling" },
-        { label: "Hellenic Shipping News / Fitch: US effective tariff rate falls to 7.4% after Section 301 replaces Section 122", url: "https://www.hellenicshippingnews.com/?p=1143409" },
+        { label: "Hellenic Shipping News, reporting a Fitch Ratings estimate (July 2026): US effective tariff rate falls to 7.4%", url: "https://www.hellenicshippingnews.com/?p=1143409" },
         { label: "Program for Public Consultation (Voice of the People), Social Security policy polling", url: "https://vop.org/commonground/social-security/" },
-        { label: "Fox Business / Reagan Institute survey: 90% oppose reducing Social Security benefits", url: "https://www.foxbusiness.com/economy/americans-split-how-save-social-security-from-insolvency-2032-deadline-looms-poll-finds" }
+        { label: "Fox Business, Americans split on how to save Social Security as the 2032 deadline looms (poll report)", url: "https://www.foxbusiness.com/economy/americans-split-how-save-social-security-from-insolvency-2032-deadline-looms-poll-finds" }
       ],
       caveats: [
         "This is a one-year snapshot. Real budget changes phase in over many years, and many options here save little in year one but much more later. We show each option at its full, phased-in size at today's prices.",
@@ -60,7 +58,7 @@
           "About 70 million people get a check every month",
           "Average retired worker: about $2,070 a month in 2026",
           "Keeps 28.8 million people out of poverty, more than any other program (Census, 2025)",
-          "The retirement trust fund runs dry in late 2032; after that, checks would be cut about 22% automatically unless Congress acts"
+          "The retirement fund alone runs dry in late 2032; combined with the disability fund, 2034. After that, checks would be cut about 22% automatically unless Congress acts"
         ],
         stories: [
           { at: -5, text: "Every check shrinks about 5%: a typical retiree loses roughly $100 a month, about what many spend on groceries in a week." },
@@ -143,7 +141,7 @@
         ],
         effects: {
           metrics: { uninsured: -120000 },
-          personas: { single_mom: 60 }, // 1% of ~$6,000 marketplace premium credit (Dale & Karen are above 400% of poverty: no credit now)
+          personas: { single_mom: 60 }, // 1% of ~$6,000 marketplace premium credit (Dale & Kathy are above 400% of poverty: no credit now)
           approval: { seniors: 0.01, working_families: 0.06, young_adults: 0.04, small_business: 0.04, rural_military: 0.03 },
           gdpPct: 0.0031
         }
@@ -181,10 +179,10 @@
         ],
         stories: [
           { at: -5, text: "A pay freeze and smaller housing allowances: a sergeant's family in San Diego loses about $250 a month, and re-enlistment rates dip." },
-          { at: -25, text: "Roughly 200,000 fewer troops. Whole Army brigades and Navy ships are retired, and bases in small towns lay off the restaurants and shops that served them." },
-          { at: -50, text: "The military shrinks by about half. The US can no longer keep forces in Europe, Korea and the Middle East at the same time, and allies scramble to fill the gap." },
+          { at: -25, text: "Roughly 165,000 fewer troops. Whole Army brigades and Navy ships are retired, and restaurants and shops near small-town bases lose their customers." },
+          { at: -50, text: "About 330,000 fewer troops, a quarter of the force, and deep pay cuts for those who stay. The US can no longer keep forces in Europe, Korea and the Middle East at the same time, and allies scramble to fill the gap." },
           { at: 5, text: "A raise for junior enlisted troops, many of whose families now qualify for food aid. Recruiters have an easier time." },
-          { at: 25, text: "Room for about 200,000 more troops plus better pay. The armed forces grow to their largest size since the early 1990s." }
+          { at: 25, text: "Room for about 165,000 more troops plus better pay. The armed forces grow to their largest size since the mid-1990s." }
         ],
         effects: {
           metrics: { military_personnel: 6600 }, // assume half of a 1% change comes from headcount: 0.5% of 1.32M
@@ -298,7 +296,7 @@
         stories: [
           { at: -10, text: "Smaller cost-of-living raises for federal and military retirees: a retired Army master sergeant loses about $150 a month after a few years." },
           { at: -30, text: "Pensions for future federal workers are slashed. Hiring experienced nurses, engineers and air-traffic controllers gets harder." },
-          { at: 10, text: "Retirees get bigger annual raises, and long-promised fixes for widows of service members are paid in full." },
+          { at: 10, text: "Retirees get bigger annual raises and larger survivor benefits." },
           { at: 25, text: "Military retirees who are also disabled receive both full payments without the current offsets." }
         ],
         effects: {
@@ -493,7 +491,7 @@
         baseline: 78.1, locked: false, min: -75, max: 100, step: 1,
         blurb: "National parks and forests, wildfire fighting, the EPA, the Army Corps of Engineers, clean-water grants and energy programs.",
         facts: [
-          "63 national parks with over 300 million visits a year",
+          "Over 400 Park Service sites, including 63 national parks, with over 300 million visits a year",
           "The Forest Service spends billions a year fighting wildfires",
           "The Army Corps of Engineers maintains levees, dams and ports"
         ],
@@ -573,7 +571,7 @@
         blurb: "2.9% of all wages with no cap (split between worker and employer), plus an extra 0.9% on earnings over $200,000 ($250,000 for couples).",
         facts: [
           "Pays for Medicare's hospital insurance (Part A)",
-          "Covers only about 40% of total Medicare costs; the rest comes from general taxes and premiums"
+          "Covers only about a third of total Medicare costs; the rest comes from general taxes and premiums"
         ]
       },
       {
@@ -586,7 +584,7 @@
       },
       {
         id: "corporate_income_tax", name: "Corporate income tax", icon: "🏢", baseline: 381.4,
-        blurb: "A 21% tax on the profits of large corporations.",
+        blurb: "A 21% tax on the profits of corporations that pay tax at the company level (C corporations): nearly all large companies and many smaller ones.",
         facts: [
           "Fell 16% in 2026 as the 2025 law let companies write off equipment and research costs immediately",
           "Down from about a third of federal revenue in the 1950s to about 7% today",
@@ -622,7 +620,7 @@
         id: "fed_misc", name: "Federal Reserve & other", icon: "🏦", baseline: 46.7,
         blurb: "Profits the Federal Reserve hands over, fees, fines and other miscellaneous receipts.",
         facts: [
-          "The Fed sent just $10.5B in 2026; it sent about $100B a year before its interest costs rose in 2022",
+          "The Fed sent just $10.5B in 2026; it averaged about $80B a year in the decade before its interest costs rose in 2022",
           "Includes the Universal Service Fund fee on phone bills"
         ]
       }
@@ -686,7 +684,7 @@
         // CRFB: top four brackets +1 pt = $300B/10yr; the 24% bracket's share removed -> ~$20B/yr. Big falloff: high earners shift income and timing.
         source: "CBO Budget Options 2024 (top four brackets +1 pt = $300B/10yr, per CRFB); falloff reflects JCT-style behavioral response",
         stories: [
-          { at: 33, text: "The top rate falls to its lowest level since the 1980s. A household earning $2 million saves about $60,000 a year; the deficit grows." },
+          { at: 33, text: "The top rate falls to its lowest level since the early 1990s. A household earning $2 million saves about $60,000 a year; the deficit grows." },
           { at: 40, text: "Back to roughly the 39.6% rate of the 1990s and 2010s. A household with $1 million of taxable income pays about $18,000 more." },
           { at: 50, text: "A 50% top rate, last seen in the mid-1980s. Expect a surge of tax planning: high earners delay bonuses and convert pay into lower-taxed capital gains." }
         ],
@@ -869,12 +867,12 @@
         source: "Treasury receipts ($1,341.5B at 12.4%) less CBO's standard 25% income-tax offset; CBO Budget Options 2024 (1-pt payroll tax ~$1.3T/10yr)",
         stories: [
           { at: 10.4, text: "A 2-point payroll tax cut, like the one in 2011-12, puts about $1,000 a year in a median worker's pocket. Social Security's trust fund runs dry sooner." },
-          { at: 13.4, text: "A 1-point increase costs a $60,000 worker about $600 a year. Combined, it closes nearly a quarter of Social Security's long-term gap." },
+          { at: 13.4, text: "A 1-point increase costs a $60,000 worker about $600 a year. It closes nearly a quarter of Social Security's long-term gap." },
           { at: 16.4, text: "A 4-point increase nearly closes Social Security's long-term funding gap on its own, but a $60,000 worker pays about $2,400 more a year." }
         ],
         effects: {
           metrics: { avg_household_tax: 639, ss_depletion_year: 6, poverty: 100000 },
-          // 1% of capped wages: Keisha $32,000 -> $320; Ortiz $105,000 -> $1,050; Parks 2 x $184,500 -> $3,690
+          // 1% of capped wages: Jenna $32,000 -> $320; Ortiz $105,000 -> $1,050; Parks 2 x $184,500 -> $3,690
           personas: { single_mom: -320, median_family: -1050, young_renter: -580, military_family: -680, farm_family: -877, professional_couple: -3690, top_household: -1845 },
           approval: { seniors: -0.2, working_families: -2.0, young_adults: -1.8, high_earners: -0.8, small_business: -2.0, rural_military: -1.6 },
           gdpPct: -0.132
@@ -886,7 +884,7 @@
         blurb: "Today wages above $184,500 are not taxed for Social Security. This would also tax earnings above $250,000, leaving a 'donut hole' in between, without raising those workers' benefits.",
         budgetPerUnit: 135,
         source: "CBO option via CRFB: apply payroll tax above $250,000 without crediting benefits ($1.6T/10yr FY2026-35; closes ~70% of the 75-year gap)",
-        onText: "About 6% of workers pay more. An executive earning $1 million pays about $93,000 more a year. Social Security's trust fund lasts roughly two decades longer.",
+        onText: "Only a few percent of workers, those earning over $250,000, pay more. An executive earning $1 million pays about $93,000 more a year. Social Security's trust fund lasts roughly two decades longer.",
         effects: {
           metrics: { avg_household_tax: 1015, ss_depletion_year: 20 },
           personas: { top_household: -155000 }, // ($1.5M - $250k) x 12.4%
@@ -905,7 +903,7 @@
         stories: [
           { at: 1.9, text: "A 1-point Medicare tax cut gives a $60,000 worker about $600 a year. Medicare's hospital fund runs short much sooner." },
           { at: 3.9, text: "A 1-point increase costs a $60,000 worker about $600 a year and secures Medicare's hospital fund for decades." },
-          { at: 5.9, text: "Medicare taxes double. A two-earner family making $105,000 pays about $3,100 more a year; payroll taxes overtake income taxes for most families." }
+          { at: 5.9, text: "Medicare taxes double. A two-earner family making $105,000 pays about $3,100 more a year; payroll taxes become by far the biggest tax most families pay." }
         ],
         effects: {
           metrics: { avg_household_tax: 752, poverty: 100000 },
@@ -975,10 +973,10 @@
         unit: "%", min: 2.5, max: 25, step: 0.5, current: 7.5,
         budgetPerUnit: 22, falloff: 0.4,
         // ~$3.3T imports x 1% = $33B static, minus lower imports and the income/payroll tax offset -> ~$22B
-        source: "Yale Budget Lab and CBO tariff revenue estimates; Fitch effective rate 7.4% (Aug 2026)",
+        source: "Yale Budget Lab and CBO tariff revenue estimates; Fitch effective rate 7.4% (July 2026)",
         stories: [
           { at: 2.5, text: "Tariffs drop back to the pre-2025 level. Prices of cars, appliances and clothes ease, saving a typical family roughly $1,000 a year, and farmers regain export markets. Revenue falls by over $100 billion." },
-          { at: 12, text: "Tariffs go back up toward the post-ruling peak. A typical household pays about $900 more a year in higher prices, and soybean farmers lose sales to China." },
+          { at: 12, text: "Tariffs go back up toward the pre-ruling peak. A typical household pays about $900 more a year in higher prices, and soybean farmers lose sales to China." },
           { at: 20, text: "The highest tariffs since the 1930s. Store shelves look emptier, prices jump, and trading partners hit back at US exports. Revenue grows, but slower than the rate because people buy fewer imports." }
         ],
         effects: {
@@ -1055,7 +1053,7 @@
         stories: [
           { at: 3, text: "A 3% VAT adds about $3 to every $100 spent. It raises about $180 billion a year, and hits lower-income families hardest relative to income." },
           { at: 5, text: "A 5% VAT raises nearly $300 billion a year. Prices jump once when it starts; families like the Ortizes pay about $2,800 more a year." },
-          { at: 10, text: "A 10% VAT raises well over half a trillion dollars, about what Canada's combined sales taxes would. Social Security benefits rise with prices, but working families feel the squeeze." }
+          { at: 10, text: "A 10% VAT raises over half a trillion dollars a year (about $540 billion), at a rate still well below most rich countries'. Social Security benefits rise with prices, but working families feel the squeeze." }
         ],
         effects: {
           metrics: { avg_household_tax: 451, gas_price: 0.031, poverty: 150000 },
@@ -1147,7 +1145,7 @@
         source: "CBO option via CRFB, raise the full retirement age to 70 ($150B/10yr while phasing in; closes ~35% of the gap), fully phased-in estimate",
         stories: [
           { at: 65, text: "Back to full benefits at 65. Future retirees get about 13% more a month; the trust fund runs dry years sooner." },
-          { at: 68, text: "Future retirees wait an extra year for full benefits, or take about 6% less for life. Easy for office workers, hard for roofers and nurses' aides whose bodies give out first." },
+          { at: 68, text: "Future retirees wait an extra year for full benefits, or take about 6% less for life. Manageable for many office workers, hard for roofers and nurses' aides whose bodies give out first." },
           { at: 70, text: "Full benefits at 70. Someone retiring at 67 gets about 20% less for life. Life expectancy has risen far more for high earners than low earners, so this cut hits lower earners harder." }
         ],
         effects: {
@@ -1331,10 +1329,10 @@
       {
         id: "cancel_golden_dome", parent: "defense_weapons", side: "spending", type: "toggle",
         name: "Cancel the Golden Dome missile shield",
-        blurb: "A planned nationwide missile-defense system including space-based interceptors, with total cost estimates ranging from about $175 billion to over $500 billion.",
+        blurb: "A planned nationwide missile-defense system including space-based interceptors, with cost estimates ranging from the administration's $175 billion to CBO's roughly $1.2 trillion over 20 years (May 2026).",
         budgetPerUnit: -15,
-        // ESTIMATE: administration figure ~$175B total; CBO estimated space-based interceptors alone at $161-542B over 20 years
-        source: "Estimate based on administration ($175B) and CBO (2025: $161-542B over 20 years for space-based interceptors) cost figures",
+        // ESTIMATE of near-term annual spending: administration figure ~$175B total (~$185B budgeted so far); CBO (May 2026) ~$1.2T over 20 years
+        source: "Estimate of near-term yearly spending, based on administration ($175B total) and CBO (May 2026: about $1.2 trillion over 20 years) cost figures",
         onText: "Savings of roughly $15 billion a year. Supporters warn the US stays exposed to new hypersonic and long-range missiles; critics say the system was unlikely to work as promised.",
         effects: {
           metrics: {},
@@ -1422,7 +1420,7 @@
         blurb: "Federal funding for states to offer free, full-day preschool to all 3- and 4-year-olds.",
         budgetPerUnit: 30,
         source: "CBO score of the Build Back Better Act (2021) universal pre-K provisions, annualized",
-        onText: "About 6 million kids get free preschool, saving families thousands a year in child care and letting more parents work more hours. Research finds lasting gains for low-income kids.",
+        onText: "About 6 million kids get free preschool, saving families thousands a year in child care and letting more parents work more hours. Some studies find lasting gains for low-income kids; others find the gains fade.",
         effects: {
           metrics: { child_poverty: -100000 },
           personas: { single_mom: 3000, military_family: 2500 },
@@ -1479,9 +1477,9 @@
         share: 0.27
       },
       {
-        id: "single_mom", name: "Keisha", icon: "👩‍👧‍👦", tagline: "Single mom of two, retail worker, Georgia",
+        id: "single_mom", name: "Jenna", icon: "👩‍👧‍👦", tagline: "Single mom of two, retail worker, Georgia",
         income: 32000,
-        detail: "Keisha works full-time as a pharmacy-store shift lead and raises two kids, 4 and 8. The kids are on Medicaid (PeachCare) and she buys a marketplace plan with a premium credit; the family gets SNAP and a big tax refund from the EITC and child tax credit.",
+        detail: "Jenna works full-time as a pharmacy-store shift lead and raises two kids, 4 and 8. The kids are on Medicaid (PeachCare) and she buys a marketplace plan with a premium credit; the family gets SNAP and a big tax refund from the EITC and child tax credit.",
         // Payroll tax 7.65% = $2,448 + ~$400 excise/tariffs; income tax wiped out by credits
         federalTaxes: 2850,
         // EITC ~$5,330 + refundable child credit $3,400 + SNAP ~$2,400 + school meals ~$1,000 + kids' Medicaid ~$7,000 + premium credit ~$6,000
@@ -1502,8 +1500,8 @@
       {
         id: "young_renter", name: "Tyler", icon: "🧑‍🍳", tagline: "27, restaurant assistant manager, Denver",
         income: 58000,
-        detail: "Tyler rents a one-bedroom with a roommate and is paying off $32,000 in student loans. About $9,000 of his pay is tips and overtime, now partly tax-free under the 2025 law. He gets health insurance through work.",
-        // Income tax ~$3,700 after tip/overtime deduction; payroll $4,437; ~$600 other
+        detail: "Tyler rents a one-bedroom with a roommate and is paying off $32,000 in student loans. He's paid by the hour, and about $9,000 of his pay is overtime, now partly tax-free under the 2025 law. He gets health insurance through work.",
+        // Income tax ~$3,700 after overtime deduction; payroll $4,437; ~$600 other
         federalTaxes: 8700,
         federalBenefits: 300,
         // share: Young and single workers with moderate wages, renters, no kids; about a fifth of households are under-35 or single-person working households. (estimate)
@@ -1521,7 +1519,7 @@
         share: 0.02
       },
       {
-        id: "farm_family", name: "Dale & Karen Hutchins", icon: "🌽", tagline: "Corn & soybean farmers, Iowa",
+        id: "farm_family", name: "Dale & Kathy Hutchins", icon: "🌽", tagline: "Corn & soybean farmers, Iowa",
         income: 95000,
         detail: "They farm 1,200 acres, mostly rented. Their grown kids live nearby. Dale, an Army veteran, gets VA disability pay. They rely on subsidized crop insurance and price-support payments, pay self-employment tax on the farm's profit, and buy their own health insurance at full price since the extra ACA subsidies expired. Tariff fights hit their soybean prices.",
         // Self-employment tax ~$13,400 + income tax ~$5,000 + ~$900 other
@@ -1611,7 +1609,7 @@
       { when: { metric: "ss_depletion_year", op: ">=", value: 2060 }, text: "SOCIAL SECURITY SAVED (FOR NOW, AGAIN)", priority: 6 },
       // Spending lines
       { when: { lever: "social_security", op: "<=", value: -20 }, text: "GRANDMA GOES BACK TO WORK AS SOCIAL SECURITY SLASHED", priority: 6 },
-      { when: { lever: "social_security", op: "<=", value: -5 }, text: "SENIORS STORM CAPITOL AS CHECKS SHRINK", priority: 4 },
+      { when: { lever: "social_security", op: "<=", value: -5 }, text: "SENIORS MARCH ON CAPITOL AS CHECKS SHRINK", priority: 4 },
       { when: { lever: "social_security", op: ">=", value: 15 }, text: "EARLY-BIRD SPECIAL ON THE HOUSE: SENIORS GET BIG RAISE", priority: 4 },
       { when: { lever: "medicare", op: "<=", value: -20 }, text: "MEDICARE GETS THE KNIFE; HOSPITALS GET THE CHILLS", priority: 5 },
       { when: { lever: "medicaid_chip", op: "<=", value: -25 }, text: "GOVERNORS PANIC AS MEDICAID MONEY VANISHES", priority: 5 },

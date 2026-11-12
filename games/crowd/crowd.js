@@ -1512,7 +1512,7 @@
     if (l.blurb) info.append(el('p', {}, l.blurb));
     info.append(story);
     if (l.type === 'toggle' && l.onText) info.append(el('p', { class: 'story-off' }, 'If switched on: ' + l.onText));
-    if (l.source) info.append(el('p', { class: 'source' }, 'Estimate: ' + l.source));
+    if (l.source) info.append(el('p', { class: 'source' }, 'Source: ' + l.source));
     moreToggle(infoBtn, info);
     let input, valueOut, resetBtn;
     if (l.type === 'slider') {

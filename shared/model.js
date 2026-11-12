@@ -620,19 +620,19 @@
     const leverMoves = arr(data.levers).map((l) => ({ l, y: leverYield(l, s.levers[l.id]) })).filter((x) => x.y !== 0);
 
     if (rules.noTaxIncreases) {
-      for (const { l, y } of leverMoves) if (l.side === 'revenue' && y > 0) fail('noTaxIncreases', `${l.name} raises taxes.`);
+      for (const { l, y } of leverMoves) if (l.side === 'revenue' && y > 0) fail('noTaxIncreases', `Raises taxes: "${l.name}".`);
     }
     if (rules.noSpendingCuts) {
-      for (const sp of arr(data.spending)) if (!sp.locked && s.spending[sp.id] < 0) fail('noSpendingCuts', `${sp.name} is cut.`);
-      for (const { l, y } of leverMoves) if (l.side === 'spending' && y < 0) fail('noSpendingCuts', `${l.name} cuts spending.`);
+      for (const sp of arr(data.spending)) if (!sp.locked && s.spending[sp.id] < 0) fail('noSpendingCuts', `Cut: ${sp.name}.`);
+      for (const { l, y } of leverMoves) if (l.side === 'spending' && y < 0) fail('noSpendingCuts', `Cuts spending: "${l.name}".`);
     }
     if (Array.isArray(rules.protect)) {
       for (const id of rules.protect) {
-        if (id in s.spending && s.spending[id] < 0) fail('protect', `${nameOf[id] || id} is protected but is cut.`);
+        if (id in s.spending && s.spending[id] < 0) fail('protect', `Protected line cut: ${nameOf[id] || id}.`);
         for (const { l, y } of leverMoves) {
           if (l.parent !== id) continue;
-          if (l.side === 'spending' && y < 0) fail('protect', `${l.name} cuts protected ${nameOf[id] || id}.`);
-          if (l.side === 'revenue' && y > 0) fail('protect', `${l.name} raises protected ${nameOf[id] || id}.`);
+          if (l.side === 'spending' && y < 0) fail('protect', `"${l.name}" cuts protected line ${nameOf[id] || id}.`);
+          if (l.side === 'revenue' && y > 0) fail('protect', `"${l.name}" raises taxes in protected line ${nameOf[id] || id}.`);
         }
       }
     }

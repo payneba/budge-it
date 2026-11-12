@@ -184,7 +184,7 @@
 
     headlines: [
       { when: { stat: "deficit", op: "<=", value: 0 }, text: "BUDGET BALANCED", priority: 10 },
-      { when: { lever: "pensions", op: "<=", value: -20 }, text: "SENIORS STORM CAPITOL", priority: 5 },
+      { when: { lever: "pensions", op: "<=", value: -20 }, text: "SENIORS MARCH ON CAPITOL", priority: 5 },
       { when: { lever: "top_rate", op: ">=", value: 45 }, text: "TOP RATE SOARS", priority: 4 },
       { when: { lever: "wealth_tax", op: ">=", value: 1 }, text: "WEALTH TAX PASSES", priority: 4 },
       { when: { stat: "approval", op: "<=", value: 30 }, text: "APPROVAL CRATERS", priority: 6 },

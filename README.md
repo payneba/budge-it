@@ -75,7 +75,8 @@ A plan tuned for one usually scores badly on another.
   $1.99 trillion deficit. Budget totals come from the US Treasury's Monthly Treasury
   Statement; most policy options are scaled from Congressional Budget Office and
   Committee for a Responsible Federal Budget scores. Every source is listed in
-  `meta.sources` in `shared/data.js` and shown in each game under "About the numbers".
+  `meta.sources` in `shared/data.js` and shown in each game under "About the numbers";
+  the Crowd adds its own sources and caveats from `meta` in `games/crowd/people.js`.
 - **This is a simplified model, not a forecast.** Each option is a single annual
   number; options simply add up; the economy responds through one GDP figure.
 - **Many numbers are estimates.** The dollar effects on example households, how

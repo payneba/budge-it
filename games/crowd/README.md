@@ -230,8 +230,9 @@ to that control and (b) someone whose mood rises and someone whose mood falls.
     gains.
   - Sector job counts are direct jobs. The economy-wide count (`result.jobs`) is dealt
     separately across workers by cyclical sensitivity, so the two overlap somewhat.
-- **age rules**: the Medicare age lever hits only figures whose age falls between the
-  old and new eligibility age.
+- **age rules**: raising the Medicare age hits only figures a couple of years short of
+  today's eligibility age (`window`), who would now wait longer; people already on
+  Medicare keep it. Lowering it helps figures between the new and the old age.
 - **worry** (`CROWD_DATA.worries`): each worry has holders (per group: probability of
   holding it, mean intensity I, varied 0.6-1.4x per person) and drivers (mood points
   per unit of a control). Relief at an increase counts 0.6x the alarm at an equal cut.
@@ -241,12 +242,22 @@ to that control and (b) someone whose mood rises and someone whose mood falls.
   - Special modes:
     - *dollars* (size of government): every $B of spending or tax counts.
     - *fairness*: who pays, from $B of cuts to low/middle-income programs, broad
-      taxes and top-end taxes.
+      taxes and top-end taxes. The text voices whichever part drives the signal
+      (program cuts, broad taxes, tax cuts at the top, top-end taxes, more help, or
+      broad tax cuts), so it never claims something the plan did not do. A spending
+      lever is named by the program it changes ("Social Security").
     - *deficit*: the national debt, `I x clamp(-12 + 30 x closure, -30, 18)` where
       closure is the share of the baseline deficit closed. It is standing at
-      baseline, so debt-worriers start uneasy and gain up to +30 by balancing.
+      baseline, so debt-worriers start uneasy and gain up to +30 by balancing. While a
+      partial closure still nets out negative, the text is `betterWorried` ("Down to
+      $1.9 trillion. Still far too much borrowing."), never a cheer.
     - *metric*: the Social Security trust-fund year from
-      `metrics.ss_depletion_year`, excluding the main benefit slider.
+      `metrics.ss_depletion_year`, excluding the main benefit slider (with the same
+      `betterWorried` rule).
+  - Templates that need a value which does not apply (`{pct}` for a lever, `{deficit}`
+    once the budget balances) are skipped in favour of the others in the list.
+  - Money rules may set `plural: true` so "my pharmacy bills go up" agrees, and may
+    give their own `texts` where the generic family wording does not fit.
 
 | Worry | Calibration |
 |-------|-------------|

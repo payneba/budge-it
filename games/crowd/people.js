@@ -7,6 +7,28 @@
 // "estimate" is a judgment call, not a sourced figure.
 (function (root) {
   const CROWD_DATA = {
+    // Shown in the game's "About the numbers" section.
+    meta: {
+      caveats: [
+        "How many people are in each group comes from Census, SSA, BLS and other official counts. How strongly each group reacts to a change, and how much people care about each worry, are our estimates, loosely guided by published polling.",
+        "Some small groups (the top 0.1%, troops, farmers, scientists and others) always get at least one figure, even when their share of the country would round to none, so they stay visible. That over-draws them slightly; each figure says how many real adults it stands for.",
+        "Dollar effects on each figure are rough: they use typical incomes, tax brackets and benefit amounts for the group, not anyone's real return or check.",
+        "Lost jobs, lost coverage and lost rent help are dealt out from the budget model's national counts. Who gets hit is random within the groups most exposed, and the counts are themselves estimates.",
+        "The crowd reacts to the whole change landing at once. A real plan phases in over years and gives people time to adjust, so balancing the budget in one year looks harsher here than it would be.",
+        "Moods and the vote estimate are a game mechanic, not a poll or a prediction of any election."
+      ],
+      sources: [
+        "Census Bureau, Vintage 2024 population estimates; CPS ASEC 2025",
+        "Social Security Administration, Fast Facts & Figures 2025",
+        "Bureau of Labor Statistics, Current Population Survey and Consumer Expenditure Survey 2023",
+        "IRS Rev. Proc. 2025-32 (2026 tax brackets and standard deduction)",
+        "DOE, US Energy and Employment Report 2025",
+        "Pew Research Center: policy priorities (Feb 2024), taxes and fairness (April 2023), science funding (Feb 2025)",
+        "Gallup: government role (Sept 2024), taxes (April 2025), defense spending (Feb 2025)",
+        "KFF Health Tracking Polls (2023-2025); AP-NORC polling (2021-2025)"
+      ]
+    },
+
     // Census Bureau, Vintage 2024 population estimates: ~262 million residents 18+.
     adults: 262e6,
     defaultSize: 260,
@@ -394,7 +416,7 @@
         look: { outfit: ["casual"], hat: ["none", "cap"], prop: ["stroller", "none", "briefcase"] },
         about: "Two paychecks, a mortgage, kids in public school and health insurance through work: income about {income}.",
         idle: ["Soccer practice, then piano, then homework. Every night.", "We finally paid off the minivan.", "Planning a camping trip with the kids.", "Back-to-school shopping is no joke."],
-        workplace: ["work"], job: ["my job"]
+        workplace: ["my workplace"], job: ["my job"]
       },
       {
         id: "office_worker", group: "Office & admin workers", share: 0.03,
@@ -569,14 +591,14 @@
         look: { outfit: ["casual", "hivis"], hat: ["none", "cap"], prop: ["none", "briefcase", "toolbox"] },
         about: "A few years from retirement and counting on Social Security and Medicare starting on schedule.",
         idle: ["Seven more years. I've got a spreadsheet.", "My grandson starts kindergarten this fall.", "Took up pickleball. Ruthless game.", "My back says retire; my wallet says not yet."],
-        workplace: ["work"], job: ["my job"]
+        workplace: ["my workplace"], job: ["my job"]
       }
     ],
 
     // Display names for keys that are stats, not budget ids.
     statTopics: { deficit: "The national debt", ss_depletion_year: "Social Security's future", fairness: "Who pays", jobs: "The economy" },
     // How a cause reads inside a sentence ("I lost my job after {cause}"). {name} = control name.
-    causes: { spendingCut: "the {name} cuts", spendingRaise: "the boost to {name}", leverOn: "the change to {name}", leverMove: "the change to {name}",
+    causes: { spendingCut: "the {name} cuts", spendingRaise: "the boost to {name}", leverOn: "the “{name}” change", leverMove: "the “{name}” change",
               jobs: { loss: "the slowdown", gain: "the pickup in the economy" } },
 
     // ------------------------------------------------------------------
@@ -594,10 +616,10 @@
       { control: "social_security", base: "ss", per: 0.01, family: "benefit", what: "Social Security check", ws: "SS check", monthly: true },
       { control: "medicare", base: "medicare", per: 0.0077, family: "cost", what: "Medicare premiums and copays", ws: "Medicare bills", monthly: true },
       { control: "veterans", base: "va", per: 0.01, family: "benefit", what: "VA disability check", ws: "VA check", monthly: true },
-      { control: "defense_personnel", base: "milpay", per: 0.005, family: "benefit", what: "military pay and housing allowance", ws: "My pay", monthly: true },
+      { control: "defense_personnel", base: "milpay", per: 0.005, family: "benefit", what: "military pay and housing allowance", plural: true, ws: "My pay", monthly: true },
       { control: "snap_food", base: "snap", per: 0.01, family: "benefit", what: "SNAP grocery benefit", ws: "SNAP", monthly: true },
-      { control: "income_support", base: "credits", per: 0.01, family: "benefit", what: "tax refund and family credits", ws: "Refund",
-        whatBy: { disabled: "SSI check", unemployed: "unemployment check", retiree_low: "SSI check", housing_aid: "SSI check", caregiver: "family credits" } },
+      { control: "income_support", base: "credits", per: 0.01, family: "benefit", what: "tax refund from family credits", ws: "Refund",
+        whatBy: { disabled: "SSI check", unemployed: "unemployment check", retiree_low: "SSI check", housing_aid: "SSI check", caregiver: "family tax credit" } },
       // Net line ~$103B vs ~$200B of pension checks: 1% of the line ~0.5% of checks.
       { control: "federal_retirement", base: "fedpension", per: 0.005, family: "benefit", what: "pension", ws: "Pension", monthly: true },
       { control: "education", base: "pell", per: 0.01, family: "benefit", what: "Pell grant", ws: "Pell grant" },
@@ -609,7 +631,8 @@
       { control: "rate_middle", base: "taxMiddle", per: -0.01, family: "tax", what: "income tax", ws: "Income tax" },
       { control: "rate_top", base: "taxTop", per: -0.01, family: "tax", what: "top-bracket income tax", ws: "Top-rate tax" },
       { control: "cap_gains_rate", base: "capgains", per: -0.01, family: "tax", what: "tax on investment gains", ws: "Cap-gains tax" },
-      { control: "gains_at_death", base: "gainsDeath", per: -1, family: "tax", what: "tax our heirs will owe on unsold stock", ws: "Estate gains tax" },
+      { control: "gains_at_death", base: "gainsDeath", per: -1, family: "tax", what: "tax our heirs will owe on unsold stock", ws: "Estate gains tax",
+        texts: { loss: ["Our heirs would owe tax on stock we never sold: about {amt} on average.", "Taxing gains at death costs our family roughly {amt}, spread over the years."] } },
       { control: "carried_interest", base: "carried", per: -1, family: "tax", what: "tax on my fund's carried interest", ws: "Carried interest" },
       { control: "salt_cap_10k", base: "salt", per: -1, family: "tax", what: "income tax after losing the state-tax deduction", ws: "SALT deduction" },
       { control: "itemized_cap_15", base: "itemized", per: -1, family: "tax", what: "tax after the deduction limit", ws: "Deductions" },
@@ -624,36 +647,46 @@
       { control: "ss_cap_250k", base: "ssCap", per: -1, family: "tax", what: "Social Security tax on pay over $250,000", ws: "Payroll tax" },
       { control: "medicare_payroll_rate", base: "wage", per: -0.01, family: "tax", what: "Medicare payroll tax", ws: "Medicare tax" },
       // Corporate taxes fall mostly on shareholders, some on wages (JCT/CBO ~75/25).
-      { control: "corp_rate", base: "corp", per: -1, family: "tax", what: "share of the corporate tax (through my stocks and pay)", ws: "Corporate tax" },
-      { control: "foreign_income_full_rate", base: "foreignInc", per: -1, family: "tax", what: "share of the tax on companies' foreign profits", ws: "Corporate tax" },
+      { control: "corp_rate", base: "corp", per: -1, family: "tax", what: "share of the corporate tax", ws: "Corporate tax",
+        texts: { loss: ["Through my stocks and my paycheck, the corporate tax costs us about {amt} more.", "A higher corporate rate comes out of my stocks and my pay: about {amt}."],
+                 gain: ["A lower corporate rate is worth about {amt} to us, through my stocks and pay.", "Through my stocks and paycheck, the corporate-tax cut puts about {amt} our way."] } },
+      { control: "foreign_income_full_rate", base: "foreignInc", per: -1, family: "tax", what: "share of the tax on companies' foreign profits", ws: "Corporate tax",
+        texts: { loss: ["Taxing companies' foreign profits at the full rate costs us about {amt} through our stocks.", "Our stocks take a hit from the foreign-profits tax: about {amt}."] } },
       { control: "end_full_expensing", base: "expensing", per: -1, family: "tax", what: "tax bill in the year I buy equipment", ws: "Equipment tax" },
       // Consumption taxes
-      { control: "tariff_rate", base: "tariff", per: -1, family: "price", what: "prices on imported goods", ws: "Prices" },
-      { control: "tariff_rate", base: "farmTrade", per: -1, family: "price", what: "lost export sales when other countries hit back", ws: "Export sales" },
+      { control: "tariff_rate", base: "tariff", per: -1, family: "price", what: "imported goods", plural: true, ws: "Prices" },
+      { control: "tariff_rate", base: "farmTrade", per: -1, family: "price", what: "export sales", plural: true, ws: "Export sales",
+        texts: { loss: ["When other countries hit back, our farm loses about {amt} in export sales.", "Retaliation tariffs cost us about {amt} in lost sales overseas."],
+                 gain: ["Lower tariffs reopen export markets: about {amt} more in sales for our farm.", "Other countries drop their retaliation, and we sell about {amt} more abroad."] } },
       { control: "gas_tax", base: "gasCent", per: -1, family: "price", what: "gas", ws: "Gas" },
-      { control: "carbon_tax", base: "energy", per: -1, family: "price", what: "energy bills and gas", ws: "Energy bills" },
-      { control: "tobacco_alcohol", base: "sin", per: -1, family: "price", what: "beer, wine and cigarettes", ws: "Beer & smokes" },
+      { control: "carbon_tax", base: "energy", per: -1, family: "price", what: "energy bills and gas", plural: true, ws: "Energy bills" },
+      { control: "tobacco_alcohol", base: "sin", per: -1, family: "price", what: "beer, wine and cigarettes", plural: true, ws: "Beer & smokes" },
       { control: "vat", base: "vatBase", per: -1, family: "price", what: "everything we buy", ws: "Prices" },
-      { control: "ftt", base: "fttBase", per: -1, family: "tax", what: "trading costs on my investments", ws: "Trading tax" },
-      { control: "estate_rate", base: "estateRate", per: -1, family: "tax", what: "estate tax our heirs will owe", ws: "Estate tax" },
-      { control: "estate_exemption_35m", base: "estateEx", per: -1, family: "tax", what: "estate tax our kids will owe", ws: "Estate tax" },
+      { control: "ftt", base: "fttBase", per: -1, family: "tax", what: "trading costs on my investments", plural: true, ws: "Trading tax" },
+      { control: "estate_rate", base: "estateRate", per: -1, family: "tax", what: "estate tax", ws: "Estate tax",
+        texts: { loss: ["Our heirs would owe more estate tax: about {amt} on average.", "A higher estate-tax rate costs our family roughly {amt}, spread over the years."],
+                 gain: ["A lower estate-tax rate saves our heirs about {amt}.", "Our kids would keep about {amt} more of what we leave them."] } },
+      { control: "estate_exemption_35m", base: "estateEx", per: -1, family: "tax", what: "estate tax", ws: "Estate tax",
+        texts: { loss: ["With a $3.5 million exemption, our kids would owe estate tax: about {amt} on average.", "Lowering the estate-tax exemption costs our family roughly {amt}, spread over the years."] } },
       { control: "wealth_tax", base: "wealth", per: -1, family: "tax", what: "wealth tax", ws: "Wealth tax" },
       // Social Security reforms
-      { control: "ss_retirement_age", base: "ssFuture", per: -0.065, family: "benefit", what: "future Social Security check", ws: "Future SS", monthly: true, future: true },
+      { control: "ss_retirement_age", base: "ssFuture", per: -0.065, family: "benefit", what: "future Social Security check", ws: "Future SS", monthly: true, future: true,
+        texts: { loss: ["When I retire, my Social Security check will be {amt} smaller unless I work to {val}.", "Full benefits at {val}? That's {amt} less unless I keep working.", "{Amt} less in retirement unless I work until {val}. My knees won't last that long.", "I'm {age}. Waiting until {val} for full benefits, or taking {amt} less."] } },
       { control: "ss_chained_cpi", base: "ss", per: -0.011, family: "benefit", what: "Social Security check (after a decade of smaller raises)", ws: "SS raises", monthly: true },
-      { control: "ss_chained_cpi", base: "fedpension", per: -0.011, family: "benefit", what: "pension's cost-of-living raises", ws: "Pension COLA", monthly: true },
-      { control: "ss_chained_cpi", base: "va", per: -0.011, family: "benefit", what: "VA check's cost-of-living raises", ws: "VA COLA", monthly: true },
-      { control: "ss_high_earner_trim", base: "ssFutureHigh", per: -1, family: "benefit", what: "future Social Security check", ws: "Future SS", monthly: true, future: true },
+      { control: "ss_chained_cpi", base: "fedpension", per: -0.011, family: "benefit", what: "pension (after years of smaller raises)", ws: "Pension COLA", monthly: true },
+      { control: "ss_chained_cpi", base: "va", per: -0.011, family: "benefit", what: "VA check (after years of smaller raises)", ws: "VA COLA", monthly: true },
+      { control: "ss_high_earner_trim", base: "ssFutureHigh", per: -1, family: "benefit", what: "future Social Security check", ws: "Future SS", monthly: true, future: true,
+        texts: { loss: ["Because I earned more, my future Social Security check gets trimmed {amt}. I paid in like everyone else.", "When I retire, my check will be {amt} smaller for having earned a decent wage.", "{Amt} less in retirement. I paid the full tax my whole career."] } },
       { control: "ss_expand_benefits", base: "ssExpand", per: 1, family: "benefit", what: "Social Security check", ws: "SS check", monthly: true },
       // Medicare reforms
-      { control: "medicare_drug_negotiation", base: "drugs", per: 1, family: "cost", what: "pharmacy bills", ws: "Pharmacy" },
-      { control: "medicare_advantage_reform", base: "ma", per: -1, family: "benefit", what: "Medicare Advantage extras (dental, glasses, gym)", ws: "MA extras" },
-      { control: "site_neutral", base: "copay", per: 1, family: "cost", what: "clinic copays", ws: "Copays" },
+      { control: "medicare_drug_negotiation", base: "drugs", per: 1, family: "cost", what: "pharmacy bills", plural: true, ws: "Pharmacy" },
+      { control: "medicare_advantage_reform", base: "ma", per: -1, family: "benefit", what: "Medicare Advantage extras (dental, glasses, gym)", plural: true, ws: "MA extras" },
+      { control: "site_neutral", base: "copay", per: 1, family: "cost", what: "clinic copays", plural: true, ws: "Copays" },
       // ACA, farm, education, family
       { control: "restore_aca_enhanced", base: "acaEnh", per: 1, family: "benefit", what: "premium help", ws: "Premium help", monthly: true },
       { control: "farm_subsidy_limits", base: "farmLimit", per: -1, family: "benefit", what: "crop-insurance subsidy", ws: "Crop insurance" },
-      { control: "student_loan_forgiveness", base: "loanRelief", per: 1, family: "cost", what: "student-loan payments", ws: "Loan payments", monthly: true },
-      { control: "universal_prek", base: "prek", per: 1, family: "cost", what: "child-care bill", ws: "Child care", monthly: true },
+      { control: "student_loan_forgiveness", base: "loanRelief", per: 1, family: "cost", what: "student-loan payments", plural: true, ws: "Loan payments", monthly: true },
+      { control: "universal_prek", base: "prek", per: 1, family: "cost", what: "child care", ws: "Child care", monthly: true },
       { control: "paid_leave", base: "leave", per: 1, family: "benefit", what: "paid-leave protection (what it's worth to us in a typical year)", ws: "Paid leave",
         texts: { gain: ["If the baby comes or Mom gets sick, I'd still get paid. That's worth about {amt} to us.", "Twelve weeks of paid leave means I don't have to choose between a paycheck and my family.", "Paid leave: I could finally take time off when it matters, without losing {amt}."] } },
       { control: "ctc_fully_refundable", base: "ctcRefund", per: 1, family: "benefit", what: "child tax credit", ws: "Child credit" }
@@ -767,17 +800,18 @@
         texts: {
           loss: ["I lost {job} after {cause}.", "Laid off. {Cause} took {job}.", "Pink slip on Friday. {Cause} hit us hard.", "They let our whole crew go after {cause}."],
           fear: ["{Workplace} is talking about layoffs after {cause}.", "Rumors of cuts at {workplace} since {cause}. I could be next.", "{Workplace} froze hiring after {cause}. Everybody's nervous.", "Half my team got notices after {cause}. Am I next?"],
-          gain: ["{Workplace} is hiring again thanks to {cause}.", "More hours and overtime at {workplace} since {cause}.", "{Workplace} just won new work. My job feels safe."],
+          gain: ["{Workplace} is hiring again thanks to {cause}.", "More hours and overtime at {workplace} since {cause}.", "Things are picking up at {workplace}. My job feels safe."],
           hire: ["I got hired! First paycheck in months.", "New job starts Monday. I can breathe.", "Somebody finally called me back. I start next week."]
         },
         shorts: { loss: ["I lost my job", "Laid off", "Save our jobs!"], fear: ["Layoffs coming?", "Save our jobs!"], gain: ["Hiring again!", "Overtime's back"], hire: ["I got hired!", "Back to work!"] }
       }
     },
 
-    // Medicare eligibility age: people whose age falls between the current and new age.
+    // Medicare eligibility age. Raising it: people within `window` years below today's
+    // age who would now wait longer. Lowering it: people between the new and current age.
     ageRules: [
-      { control: "medicare_age", loseImpact: -18, gainImpact: 16, minAge: 55,
-        texts: { loss: ["I'm {age}. I was counting on Medicare next year; now I wait until {val}.", "Raising the Medicare age to {val} means buying my own insurance for two more years."],
+      { control: "medicare_age", loseImpact: -18, gainImpact: 16, minAge: 55, window: 2,
+        texts: { loss: ["I'm {age}. Raising Medicare's age to {val} means more years buying my own insurance.", "Medicare at {val} instead of {cur}: {years} of paying for my own coverage."],
                  gain: ["Medicare at {val}? I could drop my $900-a-month plan.", "I'm {age}. Medicare now instead of waiting: that's a huge relief."] },
         shorts: { loss: ["Medicare at {val}?!"], gain: ["Medicare now!"] } }
     ],
@@ -795,7 +829,7 @@
         id: "security", name: "National security", cap: 30,
         // Pew Research (Feb 29 2024 policy priorities, fielded Jan 16-21): 63% call defending
         // against terrorism a top priority; strengthening the military 56% of Republicans vs
-        // 23% of Democrats (~39% overall, derived). VERIFIED against the Pew report.
+        // 23% of Democrats (~39% overall, derived).
         // Holder share ~45%; military, veterans and defense workers far higher (estimate).
         calibration: "Pew Research Center, Feb 2024 policy priorities (defending vs terrorism 63%; strengthening the military ~39%, derived from 56% R / 23% D)",
         holders: { default: [0.45, 0.7], military: [0.95, 1.4], veteran: [0.9, 1.3], defense_worker: [0.9, 1.2], retiree_federal: [0.85, 1.2], retiree_low: [0.6, 0.9], retiree_middle: [0.6, 0.9], retiree_affluent: [0.6, 0.9], farmer: [0.6, 1], first_responder: [0.7, 1], student: [0.25, 0.5], scientist: [0.3, 0.6], young_grad: [0.3, 0.55] },
@@ -807,8 +841,8 @@
           cancel_golden_dome: { coef: -6, on: ["Canceling missile defense leaves our cities exposed to hypersonic missiles.", "No Golden Dome? I want something between my kids and a missile."], shortOn: ["Keep missile defense"] },
           delay_sentinel: { coef: -3, on: ["Keeping 1970s nuclear missiles in the silos isn't a plan.", "Delaying the new ICBM sends the wrong signal to our rivals."], shortOn: ["Modernize the nukes"] },
           close_overseas_bases: { coef: -6, on: ["Pulling out of a third of our bases tells our allies we're unreliable.", "Close bases in Japan and Germany? Our rivals will fill that gap."], shortOn: ["Allies need us"] },
-          border_immigration: { coef: 0.05, down: ["Fewer border agents means more fentanyl getting through.", "Cutting border inspections by {pct} lets more fentanyl through the ports.", "Fewer agents at the ports of entry means fewer drugs caught."], up: [] },
-          foreign_aid: { coef: 0.02, down: ["Closing embassies makes us less safe, not more.", "Diplomats prevent wars that soldiers have to fight. Don't gut the embassies.", "Cutting diplomacy {pct}? Generals say that just means buying more ammunition."], up: [] }
+          border_immigration: { coef: 0.05, down: ["Fewer border agents means more fentanyl getting through.", "Cutting border inspections by {pct} lets more fentanyl through the ports.", "Fewer agents at the ports of entry means fewer drugs caught."], up: [], shortDown: ["Stop the fentanyl"] },
+          foreign_aid: { coef: 0.02, down: ["Closing embassies makes us less safe, not more.", "Diplomats prevent wars that soldiers have to fight. Don't gut the embassies.", "Cutting diplomacy {pct}? Generals say that just means buying more ammunition."], up: [], shortDown: ["Diplomacy keeps us safe"] }
         }
       },
       {
@@ -819,7 +853,7 @@
         drivers: {
           defense_weapons: { coef: -0.12, down: ["Good: {pct} off weapons. The Pentagon has never passed an audit.", "Trimming {pct} from weapons programs that run billions over budget? About time."], up: ["{pct} more for weapons? The Pentagon can't even pass an audit.", "Another {dollars} for weapons while our schools beg for supplies."], shortDown: ["Pass an audit first"], shortUp: ["Audit the Pentagon!"] },
           defense_operations: { coef: -0.05, down: ["Closing some bases nobody needs is long overdue.", "Trimming {pct} from bases and operations. Some of those bases date from the Cold War."], up: ["More bases and exercises? We already outspend the next nine countries.", "{pct} more for bases and exercises, and the Pentagon still can't pass an audit."], shortDown: ["Trim the bases"], shortUp: ["Too much for war"] },
-          cancel_golden_dome: { coef: 5, on: ["Canceling a space missile shield that may never work: smart.", "Golden Dome was a half-trillion-dollar gamble. Good call."], shortOn: ["No space lasers"] },
+          cancel_golden_dome: { coef: 5, on: ["Canceling a space missile shield that may never work: smart.", "CBO says Golden Dome could cost over a trillion dollars. Good call."], shortOn: ["No space shield"] },
           delay_sentinel: { coef: 3, on: ["Sentinel ran 80% over budget. Pausing it is just common sense.", "Pausing a missile program that's 80% over budget. That's just being careful with money.", "Sentinel's cost blew up. Extending the old missiles a while is sensible."], shortOn: ["Stop the overruns"] },
           close_overseas_bases: { coef: 4, on: ["Bringing troops home from Europe and Asia: our allies are rich enough to defend themselves.", "Closing a third of the overseas bases. Japan and Germany can pay more of their own defense.", "Bringing troops home saves billions. About time."], shortOn: ["Bring them home"] },
           troop_levels: { coef: -0.008, down: ["A smaller standing army suits a country that isn't at war.", "A leaner military of {val} troops saves billions.", "Down to {val} troops. We're not fighting a land war."], up: ["Recruiting {val} troops means more kids sent abroad.", "Growing the military to {val} troops in peacetime? That money could go home.", "{val} troops means bigger recruiting bonuses we can't afford."], shortDown: ["Smaller is fine"], shortUp: ["Too many troops"] }
@@ -834,9 +868,9 @@
         holders: { default: [0.4, 0.6], scientist: [1, 1.5], student: [0.7, 1.1], tech_professional: [0.7, 1], health_pro: [0.8, 1.1], young_grad: [0.6, 0.9], teacher: [0.6, 0.9], middle_family: [0.5, 0.8], nurse: [0.6, 0.9], retiree_low: [0.3, 0.6], retiree_middle: [0.35, 0.7], retiree_affluent: [0.45, 0.8], caregiver: [0.6, 0.9] },
         drivers: {
           science_research: { coef: 0.35, down: ["We just cut the research budget by {pct}. Who cures Alzheimer's now?", "{pct} less for NIH and NASA. The next mRNA vaccine gets invented somewhere else.", "Cutting science by {pct} eats our seed corn. My kids will pay for that in 20 years.", "My mom has Parkinson's. A {pct} cut to medical research is personal."], up: ["{pct} more for research. That's how we got GPS, the internet and cancer drugs.", "More NIH grants means more shots at curing diseases like my dad's."], shortDown: ["Fund the cures!", "Science pays off", "Who cures cancer now?"], shortUp: ["Go science!"] },
-          education: { coef: 0.06, down: ["Fewer Pell grants today means fewer engineers tomorrow.", "A {pct} cut to college aid means fewer engineers and nurses in ten years.", "Cutting student aid {pct} shrinks the next generation of scientists."], up: [] },
-          energy_environment: { coef: 0.04, down: ["Cutting energy research while other countries race ahead on batteries.", "Cutting energy research {pct} while China builds the batteries we'll have to buy.", "Battery and grid research takes a {pct} hit. That's tomorrow's jobs."], up: [] },
-          everything_else: { coef: 0.03, down: ["Cutting the CDC and FDA is how the next pandemic gets ahead of us.", "A {pct} cut to the CDC and FDA. Outbreaks don't wait for budgets.", "Fewer FDA reviewers after a {pct} cut means slower approvals for new treatments."], up: [] },
+          education: { coef: 0.06, down: ["Fewer Pell grants today means fewer engineers tomorrow.", "A {pct} cut to college aid means fewer engineers and nurses in ten years.", "Cutting student aid {pct} shrinks the next generation of scientists."], up: [], shortDown: ["Train tomorrow's engineers"] },
+          energy_environment: { coef: 0.04, down: ["Cutting energy research while other countries race ahead on batteries.", "Cutting energy research {pct} while China builds the batteries we'll have to buy.", "Battery and grid research takes a {pct} hit. That's tomorrow's jobs."], up: [], shortDown: ["Fund energy research"] },
+          everything_else: { coef: 0.03, down: ["Cutting the CDC and FDA is how the next pandemic gets ahead of us.", "A {pct} cut to the CDC and FDA. Outbreaks don't wait for budgets.", "Fewer FDA reviewers after a {pct} cut means slower approvals for new treatments."], up: [], shortDown: ["Fund the CDC and FDA"] },
           medicare_drug_negotiation: { coef: -2, on: ["Cheaper drugs now, but fewer new cures later; CBO says so too.", "Lower drug prices, but CBO expects a few fewer new medicines over 30 years. Trade-off.", "Negotiating prices could mean fewer drug companies betting on rare diseases."], shortOn: ["Fewer new cures?"] },
           student_loan_forgiveness: { coef: 0.8, on: ["Debt relief lets young people take research jobs instead of chasing salaries.", "With $10,000 off, my friends can take lab jobs that don't pay like finance.", "Debt relief means more grads can afford to go into research and teaching."], shortOn: ["Free the grads"] }
         }
@@ -848,8 +882,8 @@
         holders: { default: [0.35, 0.6], teacher: [1, 1.4], student: [0.8, 1.1], low_income_parent: [0.75, 1], middle_family: [0.65, 0.9], young_grad: [0.5, 0.8], caregiver: [0.5, 0.8], immigrant_family: [0.6, 0.9], retiree_low: [0.25, 0.5] },
         drivers: {
           education: { coef: 0.25, down: ["A {pct} cut means my kid's reading specialist is gone.", "Special-ed and Head Start take a {pct} hit. The kids who need help most lose it.", "Pell grants shrink with a {pct} cut. College slips out of reach for kids like mine."], up: ["{pct} more for schools: reading help, special ed, bigger Pell grants.", "Finally funding special education like Congress promised in 1975."], shortDown: ["Fund our schools!", "Kids first!"], shortUp: ["Schools win!"] },
-          universal_prek: { coef: 6, on: ["Free preschool for every 4-year-old. Best investment we could make.", "Pre-K for all: kids start kindergarten ready to learn."], shortOn: ["Pre-K for all!"] },
-          snap_food: { coef: 0.02, down: ["Hungry kids can't learn. School meals matter.", "Kids who skip breakfast can't focus in class. Food aid is school aid.", "A {pct} cut to food aid shows up in my classroom by Thursday."], up: [] }
+          universal_prek: { coef: 6, on: ["Free preschool for every 3- and 4-year-old. Best investment we could make.", "Pre-K for all: kids start kindergarten ready to learn."], shortOn: ["Pre-K for all!"] },
+          snap_food: { coef: 0.02, down: ["Hungry kids can't learn. School meals matter.", "Kids who skip breakfast can't focus in class. Food aid is school aid.", "A {pct} cut to food aid shows up in my classroom by Thursday."], up: [], shortDown: ["Hungry kids can't learn"] }
         }
       },
       {
@@ -863,7 +897,7 @@
           energy_environment: { coef: 0.25, down: ["Cutting the EPA and parks by {pct} while the summers keep getting hotter.", "A {pct} cut to clean water and parks. My kids' generation pays for this."], up: ["{pct} more for clean energy, clean water and parks. Good.", "Replacing lead pipes and building clean power: finally."], shortDown: ["There is no planet B", "Protect our parks"], shortUp: ["Clean air wins"] },
           carbon_tax: { coef: 0.12, up: ["A ${val}-a-ton carbon fee: polluters finally pay for the damage.", "A carbon price is the cheapest way to cut emissions. Economists agree."], down: [], shortUp: ["Price carbon!"] },
           gas_tax: { coef: 0.03, up: ["A higher gas tax nudges people toward cleaner cars.", "A {val}-cent gas tax nudges people toward cleaner cars.", "With a {val}-cent gas tax people drive a bit less, and the air gets cleaner."], down: ["Making gas cheaper means more pollution.", "Making gas cheaper means more driving and more pollution.", "A gas-tax cut is a subsidy for burning more oil."], shortUp: ["Drive less"], shortDown: ["More smog"] },
-          transportation: { coef: 0.03, down: ["Bus and train cuts put more cars on the road.", "Cutting transit {pct} means more traffic and dirtier air."], up: ["More transit means cleaner air.", "More buses and trains mean cleaner air.", "{pct} more for transit: fewer cars idling in traffic."] }
+          transportation: { coef: 0.03, down: ["Bus and train cuts put more cars on the road.", "Cutting transit {pct} means more traffic and dirtier air."], up: ["More transit means cleaner air.", "More buses and trains mean cleaner air.", "{pct} more for transit: fewer cars idling in traffic."], shortDown: ["Save our buses"], shortUp: ["Transit, not smog"] }
         }
       },
       {
@@ -875,7 +909,7 @@
         drivers: {
           everything_else: { coef: 0.25, down: ["Cutting FEMA and the CDC by {pct} right before hurricane season.", "When the next flood comes, a {pct} smaller FEMA means waiting months for help.", "Fewer food-safety inspectors and a slower outbreak response. That's a gamble."], up: ["A bigger disaster fund means help arrives in days, not months.", "{pct} more for FEMA and the CDC. Cheaper than cleaning up after."], shortDown: ["Who comes after a flood?", "Fund FEMA!"], shortUp: ["Ready for storms"] },
           energy_environment: { coef: 0.12, down: ["Fewer wildfire crews and slower levee repairs. My town floods every few years.", "A {pct} cut to firefighting and dams. That's insurance we'll miss."], up: ["More forest thinning and levee repair. Cheaper than the disaster.", "More wildfire crews before fire season: that's money well spent."], shortDown: ["Fire season's coming"], shortUp: ["Fix the levees"] },
-          transportation: { coef: 0.04, down: ["The Coast Guard and air-traffic control are safety, not luxuries.", "A {pct} cut to the agency that runs the Coast Guard and air-traffic control? Risky."], up: [] }
+          transportation: { coef: 0.04, down: ["The Coast Guard and air-traffic control are safety, not luxuries.", "A {pct} cut to the agency that runs the Coast Guard and air-traffic control? Risky."], up: [], shortDown: ["Safety isn't optional"] }
         }
       },
       {
@@ -887,7 +921,7 @@
         drivers: {
           transportation: { coef: 0.3, down: ["A {pct} cut to highways and transit. That bridge on my commute is already rated poor.", "Potholes, delayed flights, fewer buses: that's what a {pct} cut buys.", "Air-traffic control still runs on floppy disks, and we cut it {pct}?"], up: ["{pct} more for roads, bridges and airports. About time.", "Fixing bridges and modernizing air-traffic control: money well spent."], shortDown: ["Fix our bridges!", "Potholes everywhere"], shortUp: ["Build it!"] },
           gas_tax: { coef: 0.05, up: ["A {val}-cent gas tax actually pays to fix the roads.", "The gas tax hasn't gone up since 1993. Roads don't fix themselves."], down: ["Cutting the gas tax drains the highway fund.", "A gas tax of {val} cents won't fix a single bridge."], shortUp: ["Pay for the roads"], shortDown: ["Who fixes roads?"] },
-          energy_environment: { coef: 0.04, down: ["The Army Corps keeps our ports and dams working. Don't cut that.", "Our river locks are 80 years old. A {pct} cut to the Corps is a gamble."], up: [] }
+          energy_environment: { coef: 0.04, down: ["The Army Corps keeps our ports and dams working. Don't cut that.", "Our river locks are 80 years old. A {pct} cut to the Corps is a gamble."], up: [], shortDown: ["Fix the locks and dams"] }
         }
       },
       {
@@ -900,7 +934,7 @@
           foreign_aid: { coef: 0.12, down: ["Cutting aid by {pct} saves pennies and hands influence to China.", "HIV clinics rationing drugs because we cut aid by {pct}. That's not who we are.", "Foreign aid is under 1% of the budget. Cutting it {pct} buys us nothing but enemies."], up: ["Malaria nets and vaccines are the best deal in the budget.", "{pct} more aid builds friends we'll need later."], shortDown: ["Aid is 1% of budget!", "Lives, not pennies"], shortUp: ["Help the world"] },
           close_overseas_bases: { coef: -4, on: ["Pulling back from our allies invites trouble.", "Close a third of our bases and our allies start hedging their bets."], shortOn: ["Don't abandon allies"] },
           tariff_rate: { coef: -0.8, up: ["{val}% tariffs: our trading partners will hit back, and farmers pay first.", "A trade war at {val}% tariffs. Nobody wins those."], down: ["Lower tariffs mean friends and customers abroad again.", "Tariffs down to {val}%: our farmers can sell overseas again."], shortUp: ["Trade wars hurt"], shortDown: ["Free trade"] },
-          defense_weapons: { coef: 0.03, down: ["Our allies are watching what we cut.", "Allies count on our arsenal. A {pct} cut makes them nervous."], up: [] }
+          defense_weapons: { coef: 0.03, down: ["Our allies are watching what we cut.", "Allies count on our arsenal. A {pct} cut makes them nervous."], up: [], shortDown: ["Allies are watching"] }
         }
       },
       {
@@ -913,21 +947,21 @@
           snap_food: { coef: 0.12, down: ["Cutting food aid by {pct}. There are kids in my town who only eat at school.", "A {pct} SNAP cut. The food bank where I volunteer is already empty by Thursday."], up: ["More families can put food on the table.", "{pct} more for food aid: fewer kids hungry by the end of the month."], shortDown: ["Feed the kids!"], shortUp: ["No one goes hungry"] },
           income_support: { coef: 0.12, down: ["Cutting the EITC and SSI by {pct} hits the poorest people we have.", "A {pct} cut to the safety net, in this economy?"], up: ["Bigger work credits reward people who work hard for little pay.", "{pct} more for the EITC and SSI lifts families out of poverty."], shortDown: ["Protect the poor"], shortUp: ["Reward work"] },
           housing_aid: { coef: 0.08, down: ["Cutting rent help by {pct} means more grandmothers in shelters.", "Homelessness is already up. A {pct} housing cut makes it worse."], up: ["Getting families off the waiting list: good.", "{pct} more rent help means fewer kids sleeping in cars."], shortDown: ["Housing is a right"], shortUp: ["Homes for families"] },
-          medicaid_chip: { coef: 0.14, down: ["A {pct} Medicaid cut. Nursing homes and kids' doctors run on that money.", "My neighbor's son has autism. His therapy is Medicaid. {pct} cut is a disaster."], up: ["More Medicaid means fewer families going broke over a hospital stay.", "{pct} more for Medicaid: kids see a dentist sooner."], shortDown: ["Hands off Medicaid"], shortUp: ["Health care for all"] },
+          medicaid_chip: { coef: 0.14, down: ["A {pct} Medicaid cut. Nursing homes and kids' doctors run on that money.", "My neighbor's son has autism. His therapy is Medicaid. A {pct} cut is a disaster."], up: ["More Medicaid means fewer families going broke over a hospital stay.", "{pct} more for Medicaid: kids see a dentist sooner."], shortDown: ["Hands off Medicaid"], shortUp: ["Health care for all"] },
           social_security: { coef: 0.12, down: ["Cutting Social Security {pct} breaks a promise to people who paid in for 40 years.", "My mother lives on her check. A {pct} cut means choosing between food and pills."], up: ["Seniors need it. Fewer widows in poverty.", "A {pct} raise for Social Security keeps grandparents out of poverty."], shortDown: ["Keep the promise!", "Hands off my SS"], shortUp: ["Seniors first"] },
           medicare: { coef: 0.08, down: ["A {pct} cut to Medicare. Rural hospitals will close.", "Gutting Medicare {pct}. My parents can't afford higher copays."], up: ["Dental and hearing for seniors? Long overdue.", "{pct} more for Medicare could finally cap what seniors pay out of pocket."], shortDown: ["Save Medicare!"], shortUp: ["Care for seniors"] },
           veterans: { coef: 0.12, down: ["Cutting veterans' care by {pct}. They kept their promise; we should keep ours.", "A {pct} cut to the VA? Disgraceful."], up: ["Shorter VA waits. Our vets earned it.", "{pct} more for veterans: faster claims and more counselors."], shortDown: ["Honor our vets!"], shortUp: ["Vets first"] },
-          aca_subsidies: { coef: 0.03, down: ["Cutting premium help means more people go uninsured.", "A {pct} cut to marketplace help. My cousin will drop her coverage."], up: [] },
+          aca_subsidies: { coef: 0.03, down: ["Cutting premium help means more people go uninsured.", "A {pct} cut to marketplace help. My cousin will drop her coverage."], up: [], shortDown: ["Keep premium help"] },
           medicaid_per_capita_caps: { coef: -7, on: ["Capping Medicaid means states cut care for disabled kids and nursing-home residents.", "Medicaid caps: four million people lose coverage over a decade."], shortOn: ["No Medicaid caps!"] },
           cancel_medicaid_work_req: { coef: 4, on: ["Good: no more losing coverage over paperwork when you already work.", "Most people losing Medicaid to work rules already work. Canceling the rule is right."], shortOn: ["Coverage, not paperwork"] },
           reverse_snap_cuts: { coef: 3, on: ["Keeping food aid for 60-year-olds who can't find work. That's decent.", "Undoing the SNAP cuts: 2.4 million people keep groceries on the table."], shortOn: ["Food for all"] },
-          ctc_fully_refundable: { coef: 4, on: ["The poorest kids finally get the full child credit. Child poverty drops by a million.", "A full child credit for every kid, like in 2021. Child poverty fell by a third back then."], shortOn: ["End child poverty"] },
+          ctc_fully_refundable: { coef: 4, on: ["The poorest kids finally get the full child credit. Child poverty drops by a million.", "A full child credit for every kid, like in 2021. Child poverty fell nearly in half back then."], shortOn: ["End child poverty"] },
           paid_leave: { coef: 3, on: ["Every other rich country has paid leave. About time we did.", "Paid family leave: nobody should lose a job for having a baby."], shortOn: ["Paid leave now!"] },
           ss_chained_cpi: { coef: -3, on: ["Smaller raises every year for the oldest widows. That's cruel math.", "Chained CPI looks tiny, but after 20 years it's $100 a month gone."], shortOn: ["Keep full COLAs"] },
           ss_expand_benefits: { coef: 3, on: ["A higher minimum check for lifelong low-wage workers. That's fair.", "Bigger raises for the oldest retirees, who've outlived their savings. Good."], shortOn: ["Raise the minimum"] },
           ss_retirement_age: { coef: -1.5, up: ["Retirement at {val}? Tell that to a roofer or a nurse's aide.", "Raising the age to {val} hits the people whose bodies give out first."], down: ["Full benefits at {val}: people who do hard physical work deserve it.", "Back to retiring at {val}. Bodies wear out."], shortUp: ["Not everyone sits at a desk"], shortDown: ["Retire at {val}!"] },
           ctc_amount: { coef: 0.002, down: ["Shrinking the child credit to ${val} pushes kids into poverty.", "A ${val} child credit? Diapers didn't get cheaper."], up: ["A ${val} child credit: kids lifted out of poverty.", "Raising the child credit to ${val} helps every working family."], shortDown: ["Don't cut kids' credit"], shortUp: ["Help families"] },
-          universal_prek: { coef: 2, on: ["Free preschool helps the families who can't afford child care.", "Pre-K for every 4-year-old: the best anti-poverty program there is."], shortOn: ["Pre-K for all!"] },
+          universal_prek: { coef: 2, on: ["Free preschool helps the families who can't afford child care.", "Pre-K for every 3- and 4-year-old: one of the best anti-poverty tools there is."], shortOn: ["Pre-K for all!"] },
           restore_aca_enhanced: { coef: 3, on: ["Bringing back the extra ACA help: 4 million more people insured.", "Restoring the premium help: no more $1,000 premiums for a couple in their 60s."], shortOn: ["Affordable care!"] }
         }
       },
@@ -935,7 +969,7 @@
         id: "border", name: "Border security", cap: 20,
         // Pew Research (Feb 2024): dealing with immigration a top priority for 57%; Gallup
         // (2025) ~ half want immigration decreased. Holders ~35% (estimate).
-        calibration: "Pew Research Center, Feb 2024 (immigration 57% top priority, verified); Gallup immigration trend 2025",
+        calibration: "Pew Research Center, Feb 2024 (immigration 57% top priority); Gallup immigration trend 2025",
         holders: { default: [0.35, 0.7], retiree_low: [0.5, 0.9], retiree_middle: [0.5, 0.9], retiree_affluent: [0.45, 0.8], farmer: [0.45, 0.8], first_responder: [0.55, 0.9], military: [0.5, 0.8], veteran: [0.5, 0.8], immigrant_family: [0.05, 0.4], student: [0.15, 0.4], scientist: [0.15, 0.4] },
         drivers: {
           border_immigration: { coef: 0.2, down: ["Cutting the Border Patrol by {pct}? We need control of our border.", "{pct} less for border enforcement. Fentanyl comes through those gaps."], up: ["{pct} more for the border: more inspectors, more fentanyl caught.", "Finally enforcing the law at the border."], shortDown: ["Secure the border!"], shortUp: ["Border secured"] }
@@ -974,7 +1008,7 @@
         calibration: "Pew Research Center, Feb 2024 (health costs ~60% top priority); KFF Health Tracking Poll 2023 (drug negotiation ~80% favor)",
         holders: { default: [0.4, 0.6], retiree_low: [0.6, 0.9], retiree_middle: [0.6, 0.9], retiree_affluent: [0.5, 0.7], disabled: [0.6, 0.9], marketplace: [0.6, 0.9], caregiver: [0.6, 0.9], health_pro: [0.25, 0.5] },
         drivers: {
-          medicare_drug_negotiation: { coef: 4, on: ["Medicare finally bargains on drug prices like every other country does.", "Insulin and blood thinners at fair prices. About time."], shortOn: ["Lower drug prices!"] },
+          medicare_drug_negotiation: { coef: 4, on: ["Medicare already negotiates a few drug prices. Doing it for many more is overdue.", "Insulin and blood thinners at fair prices. About time."], shortOn: ["Lower drug prices!"] },
           site_neutral: { coef: 2, on: ["Same price for the same X-ray, whoever owns the building. That's just fair.", "Hospitals charging double for a checkup because they bought the clinic? Glad that's over."], shortOn: ["Same care, same price"] },
           medicare_advantage_reform: { coef: 1, on: ["Insurers padding Medicare bills by coding patients sicker: good to stop it.", "Medicare Advantage plans get paid more than regular Medicare would cost. Closing that gap is fair."], shortOn: ["Stop the upcoding"] }
         }
@@ -988,7 +1022,7 @@
         drivers: {
           tobacco_alcohol: { coef: 3, on: ["A higher cigarette tax: fewer teenagers start smoking. I've seen what lung cancer does.", "Pricier cigarettes and liquor save lives. The data is clear."], shortOn: ["Fewer kids smoking"] },
           everything_else: { coef: 0.12, down: ["Cutting the CDC and FDA by {pct}. The next outbreak won't wait.", "Fewer food inspectors after a {pct} cut. That's how salmonella gets through."], up: ["A real public-health workforce before the next pandemic.", "{pct} more for the CDC and community health centers. Prevention is cheap."], shortDown: ["Fund the CDC"], shortUp: ["Ready for outbreaks"] },
-          medicaid_chip: { coef: 0.04, down: ["Uninsured patients show up sicker and later.", "When people lose Medicaid, the ER becomes their doctor."], up: [] }
+          medicaid_chip: { coef: 0.04, down: ["Uninsured patients show up sicker and later.", "When people lose Medicaid, the ER becomes their doctor."], up: [], shortDown: ["Coverage keeps us healthy"] }
         }
       },
       {
@@ -1004,10 +1038,10 @@
       {
         id: "crime", name: "Crime & public safety", cap: 20,
         // Pew Research (Feb 2024): reducing crime a top priority for 58%.
-        calibration: "Pew Research Center, Feb 2024 (reducing crime 58% top priority, verified)",
+        calibration: "Pew Research Center, Feb 2024 (reducing crime 58% top priority)",
         holders: { default: [0.4, 0.6], first_responder: [0.95, 1.2], retiree_low: [0.5, 0.8], retiree_middle: [0.55, 0.8], middle_family: [0.5, 0.8], federal_worker: [0.4, 0.7], small_business: [0.5, 0.8], student: [0.25, 0.5] },
         drivers: {
-          justice: { coef: 0.25, down: ["Cutting the FBI and police grants by {pct}? Fraud and fentanyl cases will sit.", "A {pct} cut to courts and police. Victims wait longer for justice."], up: ["More agents for fentanyl and child-exploitation cases. Good.", "Grants for local police and victim services: that keeps my street safe."], shortDown: ["Back the blue", "Fund the courts"], shortUp: ["Safer streets"] }
+          justice: { coef: 0.25, down: ["Cutting the FBI and police grants by {pct}? Fraud and fentanyl cases will sit.", "A {pct} cut to courts and police. Victims wait longer for justice."], up: ["More agents for fentanyl and child-exploitation cases. Good.", "Grants for local police and victim services: that keeps my street safe."], shortDown: ["Support our police", "Fund the courts"], shortUp: ["Safer streets"] }
         }
       },
       {
@@ -1016,18 +1050,26 @@
         // say large corporations pay too little.
         calibration: "Pew Research Center, April 2023 (61% say the wealthy pay too little; 60% corporations)",
         holders: { default: [0.5, 0.6], low_income_parent: [0.75, 1.1], service_worker: [0.65, 1], care_aide: [0.7, 1], teacher: [0.65, 1], student: [0.65, 1], young_grad: [0.6, 0.9], unemployed: [0.7, 1], retiree_low: [0.6, 1], nurse: [0.55, 0.9], high_earner: [0.25, 0.5], affluent_investor: [0.15, 0.4], ultra_rich: [0.1, 0.4], small_business: [0.35, 0.6] },
+        // Which set is used depends on what drives the signal: bad = cuts to programs for
+        // low and middle earners (no new taxes at the top), badMixed = the same with some
+        // top-end taxes, badTax / badTaxMixed = broad taxes, badTopCut = tax cuts at the
+        // top; good = top-end taxes rose, goodHelp = more for those programs, goodTaxCut =
+        // broad taxes cut. {cut} = the program, {tax} = the tax move, both as labels.
         texts: {
-          bad: ["{cut} gets cut while the richest pay nothing extra. That's backwards.", "{cut} on the chopping block, and the top 1% gets off free?", "{cut}: cut. Billionaires: untouched. Who wrote this plan?", "{cut} is the first thing they cut, before anyone asks the wealthy to chip in."],
-          badMixed: ["The rich pay a little more, but {cut} takes the biggest hit. Still lopsided.", "{cut} gets cut deeper than the top pays. Working people carry this plan.", "Some taxes on the top, sure. But {cut} is where most of the money comes from."],
-          badTax: ["{tax} hits working families hardest. The rich barely notice.", "Taxing paychecks and groceries hits us harder than the top bracket. Not fair."],
-          badTaxMixed: ["{tax} costs working families more, as a share of pay, than the new taxes on the top cost them.", "The top pays a bit more, but {tax} lands hardest on people living paycheck to paycheck."],
-          good: ["The richest finally pay more: {tax}. That's fair.", "{tax}: everybody pays their share, starting at the top.", "Asking the top to pay more before cutting the safety net. Good."]
+          bad: ["{cut}: cut. The richest: nothing extra. That's backwards.", "{cut} on the chopping block, and the top 1% gets off free?", "{cut}: cut. Billionaires: untouched. Who wrote this plan?", "First on the chopping block: {cut}. Nobody asked the wealthy to chip in."],
+          badMixed: ["Biggest hit: {cut}. The rich pay a little more, but it's still lopsided.", "Biggest cut: {cut}. Working people carry this plan, not the top.", "Some taxes on the top, sure. But the real money comes from cuts to {cut}."],
+          badTax: ["Biggest tax change: {tax}. Working families feel that far more than the rich do.", "{tax}: that takes a bigger bite from working families than from the top bracket. Not fair."],
+          badTaxMixed: ["The top pays a bit more, but the biggest change, {tax}, lands hardest on people living paycheck to paycheck.", "Some new taxes on the top, but the biggest one, {tax}, takes a bigger share of working families' pay."],
+          badTopCut: ["Tax cuts at the top while the country is deep in debt? Backwards.", "Biggest tax break: {tax}. It goes to the people who need it least.", "{tax}: a break for the top, while the rest of us wait. Backwards."],
+          good: ["The richest finally pay more. Biggest step: {tax}. That's fair.", "{tax}: everybody pays their share, starting at the top.", "Asking the top to pay their share. Good."],
+          goodHelp: ["More for {cut}: help goes to the people who need it most.", "{cut}: more help, not less. Good priorities."],
+          goodTaxCut: ["Biggest tax cut: {tax}. That's one working families actually feel.", "{tax}: a break for paychecks, not portfolios. Fair."]
         },
         drivers: {
           carried_interest: { coef: 4, on: ["Fund managers paying a lower rate than nurses? Closing that loophole is overdue.", "Carried interest taxed like a paycheck. Finally."], shortOn: ["Close the loophole"] },
           farm_subsidy_limits: { coef: 2.5, on: ["Why should the biggest farms get the biggest checks? Capping them is fair.", "Most farm payments go to the largest 10% of farms. Good to cap them."], shortOn: ["Cap mega-farm aid"] }
         },
-        shorts: { bad: ["Tax the rich first!", "Make the top pay", "Who's paying? Us."], good: ["Fair share!", "Top pays more"] }
+        shorts: { bad: ["Tax the rich first!", "Make the top pay", "Who's paying? Us."], badTopCut: ["No breaks for the top", "Backwards priorities"], good: ["Fair share!", "Top pays more"], goodHelp: ["Good priorities", "Fair to working folks"] }
       },
       {
         id: "fair_share_right", name: "Fair share (don't punish success)", cap: 25, mode: "fairness", direction: "merit",
@@ -1035,8 +1077,8 @@
         calibration: "Pew Research Center, April 2023 (about 3 in 10 say the wealthy pay a fair share or too much)",
         holders: { default: [0.22, 0.4], high_earner: [0.75, 1.1], affluent_investor: [0.9, 1.3], ultra_rich: [1, 1.4], small_business: [0.6, 0.8], tech_professional: [0.4, 0.5], farmer: [0.5, 0.6], health_pro: [0.6, 0.9], retiree_affluent: [0.5, 0.7], student: [0.1, 0.3] },
         texts: {
-          bad: ["{tax}? The top 1% already pays 40% of the income tax.", "{tax} soaks the successful and pushes investment overseas.", "{tax}: punishing the people who build businesses and hire.", "{tax} feels like a penalty for succeeding."],
-          good: ["Lower taxes on investment mean more businesses and more jobs.", "Finally, a break for the people who invest and hire."],
+          bad: ["{tax}? The top 1% already pays 40% of the income tax.", "{tax}: that soaks the successful and pushes investment overseas.", "{tax}: punishing the people who build businesses and hire.", "{tax}? That feels like a penalty for succeeding."],
+          good: ["Lower taxes at the top mean more investment and more jobs.", "Finally, a break for the people who invest and hire."],
           goodBroad: ["Everybody pays a little: fairer than soaking one group.", "A broad tax everyone pays beats piling it all on the top 1%."]
         },
         drivers: {
@@ -1054,8 +1096,10 @@
         allSpending: -0.03, allSpendingLevers: -0.03, allRevenue: -0.035,
         overrides: { foreign_aid: -0.3, everything_else: -0.06, irs_enforcement: -0.6 },
         texts: {
-          spendDown: ["{topic}: {dollars} less. Washington can live within its means.", "{topic} trimmed {pct}. About time someone tightened the belt.", "{topic}: {dollars} cut. Every family has to budget; so should DC."],
-          spendUp: ["{topic}: another {dollars}? We can't afford what we've got.", "{topic}: {dollars} more, with a $2 trillion deficit?"],
+          // {pct} is only defined for the main spending sliders and {deficit} only while
+          // there is one; templates that need a missing value are skipped.
+          spendDown: ["{topic}: {dollars} less. Washington can live within its means.", "{topic} trimmed {pct}. About time someone tightened the belt.", "{topic}: {dollars} cut. Every family has to budget; so should DC.", "{topic}: {dollars} saved. About time someone tightened the belt."],
+          spendUp: ["{topic}: another {dollars}? We can't afford what we've got.", "{topic}: {dollars} more, with a {deficit} deficit?", "{topic}: {dollars} more. Who's paying for that?"],
           taxUp: ["{topic}: another {dollars} out of the economy and into Washington.", "{topic}: {dollars} more in taxes. Spend less instead.", "{topic}? {dollars} more in taxes. The problem is spending, not taxes."],
           taxDown: ["{topic}: {dollars} back in people's pockets.", "{topic}: lower taxes. Good."],
           foreignAid: ["Foreign aid cut {pct}. Charity begins at home.", "Good. Spend our money here, not overseas."]
@@ -1074,11 +1118,14 @@
         base: -12, slope: 30, min: -30, max: 18,
         texts: {
           standing: ["We borrow about {deficit} a year. Somebody has to pay that back.", "Interest on the debt is now more than the military budget. That scares me.", "My grandkids will be paying for this {deficit} deficit.", "{deficit} of red ink every year. No family could run like that."],
-          better: ["The deficit is down to {deficit}. It's a start.", "Borrowing {saved} less a year. Finally some grown-ups.", "{saved} less borrowing. My grandkids thank you."],
+          // better: progress that outweighs the worry (impact >= 0); betterWorried: progress,
+          // but still a net worry (impact < 0), so it never reads as a cheer.
+          better: ["The deficit is down to {deficit}. It's a real start.", "Borrowing {saved} less a year. Finally some grown-ups.", "{saved} less borrowing. My grandkids thank you."],
+          betterWorried: ["Down to {deficit}. Still far too much borrowing.", "{saved} less borrowing helps, but {deficit} a year is still too much.", "Better, but we'd still borrow {deficit} a year."],
           balanced: ["A balanced budget! I didn't think I'd live to see it.", "No more borrowing on our kids' credit card.", "Balanced. Now keep it that way."],
           worse: ["Now the deficit is {deficit}?! That's on our kids.", "{added} more borrowing a year. Who pays it back?"]
         },
-        shorts: { standing: ["Fix the debt!", "Stop the red ink"], better: ["Debt going down", "Good start on debt"], balanced: ["Balanced! Finally", "Budget balanced!"], worse: ["Stop borrowing!", "Debt bomb!"] }
+        shorts: { standing: ["Fix the debt!", "Stop the red ink"], better: ["Debt going down", "Good start on debt"], betterWorried: ["Still too much debt", "Not enough yet"], balanced: ["Balanced! Finally", "Budget balanced!"], worse: ["Stop borrowing!", "Debt bomb!"] }
       },
       {
         id: "retirement", name: "Will Social Security be there?", cap: 20, mode: "metric", key: "ss_depletion_year",
@@ -1090,11 +1137,13 @@
         // impact = I * clamp(base + slope * years gained, min, max)
         base: -5, slope: 0.6, min: -15, max: 8,
         texts: {
-          standing: ["Social Security's fund runs dry around {year}. Will it be there for me?", "They say checks get cut 22% when the trust fund runs out. I'm planning on it."],
-          better: ["{topic}: Social Security's fund lasts about {n} more years. That's my retirement.", "Fixing Social Security's money gap: about {n} more years of full checks."],
-          worse: ["{topic} drains Social Security {n} years sooner. Great.", "The trust fund runs dry {n} years earlier now. Thanks a lot."]
+          standing: ["Social Security's trust funds run dry around {year}. Will it be there for me?", "They say checks get cut 22% when the trust fund runs out. I'm planning on it."],
+          // {years} = "1 year" / "3 years"
+          better: ["{topic}: Social Security's trust funds last about {years} longer. That's my retirement.", "Fixing Social Security's money gap: about {years} more of full checks."],
+          betterWorried: ["{topic}: Social Security lasts {years} longer, but it still runs short. Fix it for good.", "About {years} more of full Social Security checks. Not enough; it still runs dry."],
+          worse: ["{topic}: Social Security runs dry {years} sooner. Great.", "The trust funds run dry {years} earlier now. Thanks a lot."]
         },
-        shorts: { standing: ["Save Social Security"], better: ["SS fund lasts longer"], worse: ["SS runs dry sooner"] }
+        shorts: { standing: ["Save Social Security"], better: ["SS fund lasts longer"], betterWorried: ["Fix SS for good"], worse: ["SS runs dry sooner"] }
       }
     ],
 

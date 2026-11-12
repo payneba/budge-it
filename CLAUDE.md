@@ -170,7 +170,7 @@ are annual, "fully phased in", at the scale of the baseline fiscal year.
     //     fairness = shared-sacrifice score 0-100; hardship = hardship.pct; brink = number of households at the brink
     // or: { metric: "uninsured", op: ">=", value: 35e6 }
     // or: { all: [cond, cond, ...] }   all simple conditions must hold (one level, no nesting)
-    text: "SENIORS STORM CAPITOL AS CHECKS SHRINK",
+    text: "SENIORS MARCH ON CAPITOL AS CHECKS SHRINK",
     priority: 5                                                  // higher wins
   }],
 

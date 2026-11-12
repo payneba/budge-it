@@ -57,7 +57,15 @@
       const v = vars[parts[i]];
       s += (v !== undefined ? v : '{' + parts[i] + '}') + parts[i + 1];
     }
-    return s;
+    // "a 8% cut" -> "an 8% cut" (also 11, 18, 80...), now that the number is known.
+    return s.indexOf('a ') >= 0 || s.indexOf('A ') >= 0 ? s.replace(/\b([Aa]) (?=(?:8\d*|11|18)(?:[%.,\s]|$))/g, '$1n ') : s;
+  }
+  // Templates whose every {var} is defined. Lets content offer variants that need a
+  // value (e.g. {pct}, {deficit}) only where that value means something.
+  function usable(list, vars) {
+    if (!Array.isArray(list)) return list;
+    const ok = list.filter((tpl) => String(tpl).split(/\{(\w+)\}/g).every((p, i) => i % 2 === 0 || vars[p] !== undefined));
+    return ok.length ? ok : list;
   }
   const cap1 = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
   function commas(n) {
@@ -561,10 +569,21 @@
           const alt = w.textFor && w.textFor[c.id];
           if (alt && !isRev && amt < 0 && w.texts[alt]) tk = alt;
           const shortKey = tk in (w.shorts || {}) ? tk : (isRev ? (amt > 0 ? 'taxUp' : 'taxDown') : (amt > 0 ? 'spendUp' : 'spendDown'));
-          list.push({ key: c.id, signal: s, texts: w.texts[tk], shorts: w.shorts && w.shorts[shortKey], vars: Object.assign(varsFor(c, mv.units[c.id], mv), { dollars: fmtB(amt) }) });
+          const vars = Object.assign(varsFor(c, mv.units[c.id], mv), { dollars: fmtB(amt), deficit: result.deficit > 0 ? fmtB(result.deficit) : undefined });
+          if (c.kind !== 'spending') vars.pct = undefined;   // a lever's units are not a % of anything
+          list.push({ key: c.id, signal: s, texts: usable(w.texts[tk], vars), shorts: usable(w.shorts && w.shorts[shortKey], vars), vars });
         }
       } else if (w.mode === 'fairness') {
-        const sumOf = (ids, sign) => {
+        // A spending lever reads as the program it changes ("Social Security"): lever
+        // names are actions, not programs.
+        const programName = (c) => {
+          if (c.kind === 'lever' && c.side === 'spending') {
+            const parent = mv.idx.byId[c.def.parent];
+            if (parent) return parent.name;
+          }
+          return c.name;
+        };
+        const sumOf = (ids, sign, asProgram) => {
           let t = 0, best = null, bv = 0;
           for (const id of arr(ids)) {
             const c = mv.idx.byId[id];
@@ -572,11 +591,13 @@
             // revenue levers: $ raised; spending: $ saved (cut) = -dollars
             const v = c.side === 'revenue' ? mv.dollars[id] : -mv.dollars[id];
             t += v;
-            if (v * sign > bv) { bv = v * sign; best = c.name; }
+            if (v * sign > bv) { bv = v * sign; best = asProgram ? programName(c) : c.name; }
           }
           return { t, best };
         };
-        const low = sumOf(F.lowCuts, 1), broad = sumOf(F.broadTaxes, 1), top = sumOf(F.topTaxes, 1), topCut = sumOf(F.topTaxes, -1);
+        // {cut} names the program that is cut or boosted; {tax} names the move itself.
+        const low = sumOf(F.lowCuts, 1, true), lowUp = sumOf(F.lowCuts, -1, true), broad = sumOf(F.broadTaxes, 1), broadCut = sumOf(F.broadTaxes, -1);
+        const top = sumOf(F.topTaxes, 1), topCut = sumOf(F.topTaxes, -1);
         const scale = F.scale || 100;
         if (w.direction === 'merit') {
           const M = (top.t - (F.meritBroadWeight || 0) * Math.max(0, broad.t)) / scale;
@@ -585,25 +606,34 @@
             if (s > 0) s *= (T.positiveDamp || 0.6);
             const name = M > 0 ? top.best : (topCut.best || broad.best);
             const good = s >= 0 ? (top.t < 0 ? w.texts.good : (w.texts.goodBroad || w.texts.good)) : null;
-            list.push({ key: 'fairness', signal: s, texts: s < 0 ? w.texts.bad : good, shorts: s < 0 ? w.shorts.bad : w.shorts.good, vars: { tax: name || 'Higher taxes at the top' } });
+            const vars = { tax: name || undefined };
+            list.push({ key: 'fairness', signal: s, texts: usable(s < 0 ? w.texts.bad : good, vars), shorts: s < 0 ? w.shorts.bad : w.shorts.good, vars });
           }
         } else {
           const S = (low.t + (F.broadWeight || 0.5) * broad.t - top.t) / scale;
           if (Math.abs(S) > 1e-6) {
             let s = S > 0 ? -(F.coef || 6) * S : -(F.goodCoef || 4) * S;
             if (s > 0) s *= (T.positiveDamp || 0.6);
-            let texts, vars;
+            // Voice whichever part of the plan drives the signal, so the text never
+            // claims something the plan did not do.
+            const bw = F.broadWeight || 0.5;
+            const topRose = top.t >= (F.topPaysMin || 1);
+            const lead = (parts) => parts.sort((x, y) => y[1] - x[1])[0][0];
+            let texts, vars, shorts;
             if (S > 0) {
-              const lowDominates = low.t >= (F.broadWeight || 0.5) * broad.t;
-              const topPays = top.t >= (F.topPaysMin || 25);
-              texts = lowDominates ? (topPays && w.texts.badMixed ? w.texts.badMixed : w.texts.bad)
-                : (topPays && w.texts.badTaxMixed ? w.texts.badTaxMixed : w.texts.badTax);
-              vars = { cut: low.best || 'the safety net', tax: broad.best || 'Broad tax hikes' };
+              const why = lead([['low', Math.max(0, low.t)], ['broad', bw * Math.max(0, broad.t)], ['topCut', Math.max(0, -top.t)]]);
+              if (why === 'topCut') texts = w.texts.badTopCut || w.texts.bad;
+              else if (why === 'broad') texts = topRose && w.texts.badTaxMixed ? w.texts.badTaxMixed : w.texts.badTax;
+              else texts = topRose && w.texts.badMixed ? w.texts.badMixed : w.texts.bad;
+              vars = { cut: low.best || undefined, tax: (why === 'topCut' ? topCut.best : broad.best) || undefined };
+              shorts = (why === 'topCut' && w.shorts.badTopCut) || w.shorts.bad;
             } else {
-              texts = w.texts.good;
-              vars = { tax: top.best || 'Higher taxes at the top', cut: low.best || '' };
+              const why = lead([['top', Math.max(0, top.t)], ['help', Math.max(0, -low.t)], ['broadCut', bw * Math.max(0, -broad.t)]]);
+              texts = why === 'top' ? w.texts.good : why === 'help' ? (w.texts.goodHelp || w.texts.good) : (w.texts.goodTaxCut || w.texts.good);
+              vars = { tax: (why === 'top' ? top.best : broadCut.best) || undefined, cut: lowUp.best || undefined };
+              shorts = (why !== 'top' && w.shorts.goodHelp) || w.shorts.good;
             }
-            list.push({ key: 'fairness', signal: s, texts, shorts: S > 0 ? w.shorts.bad : w.shorts.good, vars });
+            list.push({ key: 'fairness', signal: s, texts: usable(texts, vars), shorts, vars });
           }
         }
       } else if (w.mode === 'deficit') {
@@ -611,8 +641,10 @@
         const def = result.deficit;
         const c = bd ? (bd - def) / bd : 0;
         const raw = clamp(w.base + w.slope * c, w.min, w.max);
-        const kind = c < -0.02 ? 'worse' : c <= 0.02 ? 'standing' : c < 0.97 ? 'better' : 'balanced';
-        list.push({ key: w.key || 'deficit', signal: raw, stat: true, texts: w.texts[kind], shorts: w.shorts[kind],
+        let kind = c < -0.02 ? 'worse' : c <= 0.02 ? 'standing' : c < 0.97 ? 'better' : 'balanced';
+        // Progress that still leaves people worried must not read as a cheer.
+        if (kind === 'better' && raw < 0 && w.texts.betterWorried) kind = 'betterWorried';
+        list.push({ key: w.key || 'deficit', signal: raw, stat: true, texts: w.texts[kind], shorts: w.shorts[kind] || w.shorts.standing,
           vars: { deficit: def <= 0 ? 'zero' : fmtB(def), saved: fmtB(bd - def), added: fmtB(def - bd) } });
       } else if (w.mode === 'metric') {
         const m = result.metrics && result.metrics[w.metric];
@@ -623,10 +655,11 @@
           if (Math.abs(d.amount) > bv) { bv = Math.abs(d.amount); best = d.name; }
         }
         const raw = clamp(w.base + w.slope * delta, w.min, w.max);
-        const kind = Math.abs(delta) < 0.5 ? 'standing' : delta > 0 ? 'better' : 'worse';
+        let kind = Math.abs(delta) < 0.5 ? 'standing' : delta > 0 ? 'better' : 'worse';
+        if (kind === 'better' && raw < 0 && w.texts.betterWorried) kind = 'betterWorried';
         const metricDef = arr(data.metrics).find((x) => x.id === w.metric);
-        list.push({ key: w.key || w.metric, signal: raw, stat: true, texts: w.texts[kind], shorts: w.shorts[kind],
-          vars: { n: Math.round(Math.abs(delta)), topic: best || 'This plan', year: metricDef ? Math.round(metricDef.baseline) : '' } });
+        list.push({ key: w.key || w.metric, signal: raw, stat: true, texts: w.texts[kind], shorts: w.shorts[kind] || w.shorts.standing,
+          vars: { n: Math.round(Math.abs(delta)), years: Math.round(Math.abs(delta)) === 1 ? '1 year' : Math.round(Math.abs(delta)) + ' years', topic: best || 'This plan', year: metricDef ? Math.round(metricDef.baseline) : '' } });
       }
       list.sort((x, y) => Math.abs(y.signal) - Math.abs(x.signal));
       list.nKept = Math.min(list.length, T.maxWorryDrivers || 4);
@@ -674,24 +707,24 @@
 
   const FAMILY = {
     benefit: {
-      loss: ["My {what} is {amt} smaller.", "{Amt} less from my {what}. That's real money for us.", "They're cutting my {what} by {amt}.", "Losing {amt} from my {what}. Something has to give."],
+      loss: ["My {what} {is} {amt} smaller.","{Amt} less from my {what}. That's real money for us.", "They're cutting my {what} by {amt}.", "Losing {amt} from my {what}. Something has to give."],
       lossBig: ["Losing {amt} from my {what} is {share} of what we live on. We can't absorb that.", "{Amt} less from my {what}: {share} of our income. Something big has to go."],
-      gain: ["My {what} goes up {amt}.", "{Amt} more from my {what}. That helps.", "An extra {amt} in my {what}: that covers a few bills."]
+      gain: ["My {what} {goes} up {amt}.", "{Amt} more from my {what}. That helps.", "An extra {amt} in my {what}: that covers a few bills."]
     },
     tax: {
-      loss: ["My {what} goes up {amt}.", "That's {amt} more in {what} for us.", "{Amt} more to Washington in {what}.", "We'd pay {amt} more in {what}. That's a car payment."],
+      loss: ["My {what} {goes} up {amt}.", "That's {amt} more in {what} for us.", "{Amt} more to Washington in {what}.", "We'd pay {amt} more in {what}. That's a car payment."],
       lossBig: ["{Amt} more in {what}. That's {share} of our income.", "{Amt} more in {what} is {share} of everything we make. Brutal."],
-      gain: ["My {what} drops {amt}.", "We'd keep {amt} more: lower {what}.", "{Amt} less in {what}. Nice."]
+      gain: ["My {what} {drops} {amt}.", "We'd keep {amt} more: lower {what}.", "{Amt} less in {what}. Nice."]
     },
     price: {
       loss: ["{What} would cost us about {amt} more.", "We'd pay {amt} more for {what}.", "That's about {amt} more for {what}. It adds up."],
       lossBig: ["{What} would cost us {amt} more: {share} of our income.", "Paying {amt} more for {what}. On our budget that's {share}."],
-      gain: ["{What} gets cheaper: we'd save {amt}.", "Saving about {amt} on {what}."]
+      gain: ["{What} {gets} cheaper: we'd save {amt}.", "Saving about {amt} on {what}."]
     },
     future: {
-      loss: ["When I retire, my {what} will be {amt} smaller.", "That's {amt} less when I retire. I'll have to work longer.", "I'm {age}. My {what} just shrank by {amt}.", "{Amt} less in retirement. My knees won't last to 70."],
+      loss: ["When I retire, my {what} will be {amt} smaller.", "That's {amt} less when I retire. I'll have to work longer.", "I'm {age}. My {what} just shrank by {amt}."],
       lossBig: ["When I retire, my {what} will be {amt} smaller.", "That's {amt} less when I retire. I'll have to work longer."],
-      gain: ["My {what} grows by {amt}.", "{Amt} more when I retire. That changes my plans."]
+      gain: ["My {what} {grows} by {amt}.", "{Amt} more when I retire. That changes my plans."]
     },
     cost: {
       loss: ["{What}: about {amt} more for us.", "We'd pay {amt} more in {what}.", "{Amt} more for {what}. That stings."],
@@ -863,7 +896,11 @@
           const amt = monthly ? fmtDollars(it.d / 12) + ' a month' : fmtDollars(it.d) + ' a year';
           const sharePct = 100 * Math.abs(it.d) / Math.max(1, c.income);
           const what = (it.m.whatBy && it.m.whatBy[a.id]) || it.m.what;
+          const pl = !!it.m.plural;   // `what` is a plural noun: "my pharmacy bills go up"
+          const val = mv.values[it.m.control];
           const vars = { what, What: cap1(what), amt, Amt: cap1(amt), share: Math.round(sharePct) + '%', age: c.age,
+            val: typeof val === 'number' ? String(Math.round(val * 10) / 10) : val,
+            is: pl ? 'are' : 'is', goes: pl ? 'go' : 'goes', drops: pl ? 'drop' : 'drops', gets: pl ? 'get' : 'gets', grows: pl ? 'grow' : 'grows',
             ws: it.m.ws || 'Money', a: fmtShortDollars(monthly ? it.d / 12 : it.d) + (monthly ? '/mo' : '/yr') };
           let list;
           if (it.m.texts && it.m.texts[it.d < 0 ? 'loss' : 'gain']) list = it.m.texts[it.d < 0 ? 'loss' : 'gain'];
@@ -893,8 +930,11 @@
         const cdef = mv.idx.byId[ar.control];
         if (!cdef || cdef.type !== 'slider') continue;
         const cur = cdef.def.current, val = mv.values[ar.control];
-        const vars = { age: c.age, val: Math.round(val) };
-        if (val > cur && c.age >= Math.max(ar.minAge || 0, cur - 2) && c.age < val) push('service', ar.loseImpact, ar.control, ar.texts.loss, ar.shorts.loss, vars);
+        const gap = Math.round(Math.abs(val - cur));
+        const vars = { age: c.age, val: Math.round(val), cur: Math.round(cur), years: gap === 1 ? 'one more year' : gap + ' more years' };
+        // Losers: people not yet at today's eligibility age who would now wait longer;
+        // anyone already past it keeps what they have.
+        if (val > cur && c.age >= Math.max(ar.minAge || 0, cur - (ar.window || 2)) && c.age < cur) push('service', ar.loseImpact, ar.control, ar.texts.loss, ar.shorts.loss, vars);
         else if (val < cur && c.age >= Math.max(ar.minAge || 0, val) && c.age < cur) push('service', ar.gainImpact, ar.control, ar.texts.gain, ar.shorts.gain, vars);
       }
 

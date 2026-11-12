@@ -403,3 +403,66 @@ test('crowd: react for 260 citizens takes well under 5 ms on average', () => {
   const ms = Number(process.hrtime.bigint() - t0) / 1e6 / N;
   assert.ok(ms < 5, `react took ${ms.toFixed(2)} ms`);
 });
+
+// ------------------------------------------------------------ template honesty
+const allReasons = (out) => out.citizens.flatMap((o) => o.reasons);
+const debtWorry = C.worries.find((w) => w.mode === 'deficit');
+
+test('crowd: grievance text comes from a negative reason and cheer text from a positive one', () => {
+  for (const mod of [PLANS.ssCut, PLANS.taxHeavy, PLANS.cutHeavy, PLANS.soak, (st) => { st.spending.defense_weapons = -10; st.spending.foreign_aid = -30; }]) {
+    const out = reactTo(mod);
+    const rs = allReasons(out);
+    for (const g of out.summary.grievances) assert.ok(rs.some((r) => r.key === g.key && r.text === g.text && r.impact < 0), `grievance "${g.text}"`);
+    for (const g of out.summary.cheers) assert.ok(rs.some((r) => r.key === g.key && r.text === g.text && r.impact > 0), `cheer "${g.text}"`);
+  }
+});
+
+test('crowd: a partly closed deficit that still worries people never sounds like a cheer', () => {
+  const cheerful = new Set(debtWorry.texts.better.concat(debtWorry.texts.balanced));
+  const out = reactTo((st) => { st.spending.defense_weapons = -10; st.spending.foreign_aid = -30; st.spending.everything_else = -10; });
+  const debt = allReasons(out).filter((r) => r.key === (debtWorry.key || 'deficit'));
+  assert.ok(debt.length > 0);
+  for (const r of debt) {
+    assert.ok(r.impact < 0, 'a small closure still worries debt hawks');
+    assert.ok(![...cheerful].some((t) => r.text.startsWith(t.split('{')[0]) && t.split('{')[0].length > 3), `cheerful text under a worry: ${r.text}`);
+  }
+  const g = out.summary.grievances.find((x) => x.key === (debtWorry.key || 'deficit'));
+  assert.ok(g && /still|but/i.test(g.text), `debt grievance reads as worried: ${g && g.text}`);
+  // A big closure flips it to genuine relief.
+  const big = reactTo(PLANS.taxHeavy);
+  const pos = allReasons(big).filter((r) => r.key === (debtWorry.key || 'deficit') && r.impact > 0);
+  assert.ok(pos.length > 0);
+  for (const r of pos) assert.ok(!/still far too much|still too much|still borrow/i.test(r.text), r.text);
+});
+
+test('crowd: fairness texts describe what the plan actually did', () => {
+  // Top-end tax cuts only: no claim that the rich pay more or that a program was cut.
+  const out = reactTo((st) => Object.assign(st.levers, { rate_top: 30, cap_gains_rate: 15 }));
+  const fair = allReasons(out).filter((r) => r.key === 'fairness');
+  assert.ok(fair.some((r) => r.impact < 0), 'egalitarians object to top-end cuts');
+  for (const r of fair) {
+    assert.ok(!/finally pay more|paychecks and groceries|chopping block|: cut\./i.test(r.text), r.text);
+    assert.ok(!/\{\w+\}/.test(r.text), `unfilled template: ${r.text}`);
+  }
+  // A spending lever's cut is named by its program, not by the lever.
+  const lev = reactTo((st) => { st.levers.ss_retirement_age = 70; });
+  const name = D.levers.find((l) => l.id === 'ss_retirement_age').name;
+  for (const r of allReasons(lev).filter((x) => x.key === 'fairness')) assert.ok(!r.text.includes(name), r.text);
+});
+
+test('crowd: lever reasons never quote a meaningless percentage', () => {
+  const out = reactTo((st) => Object.assign(st.levers, { ss_retirement_age: 69, medicare_age: 67, troop_levels: 1200 }));
+  for (const r of allReasons(out)) if (r.key !== 'deficit' && D.levers.some((l) => l.id === r.key)) assert.ok(!/\btrimmed \d+%/.test(r.text), r.text);
+});
+
+test('crowd: retirement-age reasons use the real new age; Medicare-age losers are under today\'s age', () => {
+  const out = reactTo((st) => { st.levers.ss_retirement_age = 68; st.levers.medicare_age = 67; });
+  const ma = D.levers.find((l) => l.id === 'medicare_age');
+  for (const o of out.citizens) {
+    for (const r of o.reasons) {
+      if (r.key === 'ss_retirement_age') assert.ok(!/\b(to|until|at) 70\b/.test(r.text), r.text);
+      if (r.key === 'medicare_age' && r.impact < 0 && r.kind === 'service') assert.ok(POP[o.id].age < ma.current, `age ${POP[o.id].age}: ${r.text}`);
+    }
+  }
+  assert.ok(allReasons(out).some((r) => r.key === 'medicare_age' && r.kind === 'service'), 'someone near Medicare age notices');
+});
