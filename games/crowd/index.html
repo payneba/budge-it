@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Crowd - Budge It</title>
+  <meta name="description" content="Balance the US federal budget and watch a crowd of Americans react on the National Mall.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%231d3b52'/%3E%3Ccircle cx='11' cy='13' r='4' fill='%23f2b632'/%3E%3Ccircle cx='21' cy='13' r='4' fill='%23d4542f'/%3E%3Crect x='7' y='18' width='8' height='9' rx='3' fill='%23f2b632'/%3E%3Crect x='17' y='18' width='8' height='9' rx='3' fill='%23d4542f'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#crowdList">Skip to the crowd as a list</a>
+  <div id="errorPanel" class="error-panel" role="alert" hidden></div>
+
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <a class="home" href="../../index.html" aria-label="Budge It: all games">Budge It</a>
+        <h1>The Crowd</h1>
+      </div>
+
+      <section class="score" aria-label="Budget">
+        <div class="deficit">
+          <span class="deficit-label" id="deficitLabel">Deficit</span>
+          <span class="deficit-num" id="deficitNum" aria-live="polite">$0</span>
+        </div>
+        <div class="progress" role="progressbar" aria-labelledby="progressLabel" aria-valuemin="0" aria-valuemax="100" id="progress">
+          <span class="progress-fill" id="progressFill"></span>
+        </div>
+        <p class="progress-label" id="progressLabel"></p>
+        <p class="inout" id="inOut"></p>
+      </section>
+
+      <section class="mood" aria-label="How the crowd feels">
+        <div class="moodbar" id="moodBar" role="group" aria-label="Figures per mood. Select a mood to highlight those figures."></div>
+        <div class="lenses" id="lenses"></div>
+      </section>
+    </header>
+
+    <div class="layout">
+      <main class="main" id="main">
+        <section class="stage" id="stage" aria-label="The crowd on the National Mall">
+          <div class="stage-bar">
+            <div class="seg" role="radiogroup" aria-label="Arrange the crowd" id="arrange"></div>
+            <div class="stage-tools">
+              <button type="button" class="tool" id="zoomOut" aria-label="Zoom out">&minus;</button>
+              <button type="button" class="tool" id="zoomIn" aria-label="Zoom in">+</button>
+              <button type="button" class="tool tool-text" id="clearHi" hidden>Show everyone</button>
+            </div>
+          </div>
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="crowd" role="img" aria-describedby="crowdCaption"></canvas>
+            <p class="hilite-note" id="hiliteNote" hidden></p>
+            <div class="win-banner" id="winBanner" hidden>
+              <span>Balanced.</span>
+              <button type="button" id="openReport">Read the crowd report</button>
+            </div>
+          </div>
+          <p class="caption" id="crowdCaption"></p>
+          <div class="sr-only" aria-live="polite" id="reactLive"></div>
+        </section>
+
+        <section class="boards" aria-label="Leaderboards">
+          <div class="board">
+            <h2>What they're angry about</h2>
+            <ol class="board-list" id="grievances"></ol>
+          </div>
+          <div class="board">
+            <h2>What they're happy about</h2>
+            <ol class="board-list" id="cheers"></ol>
+          </div>
+        </section>
+
+        <section class="legend" aria-labelledby="legendTitle">
+          <h2 id="legendTitle">Reading the crowd</h2>
+          <p id="legendScale"></p>
+          <ul class="legend-poses" id="legendPoses"></ul>
+        </section>
+
+        <section class="listview" aria-labelledby="listTitle">
+          <details id="crowdListWrap">
+            <summary><h2 id="listTitle">The crowd as a list</h2></summary>
+            <p class="muted">Every figure, grouped the way the crowd is arranged, with what is on their mind. Select anyone for their full story.</p>
+            <div id="crowdList" tabindex="-1"></div>
+          </details>
+        </section>
+
+        <section class="about" aria-labelledby="aboutTitle">
+          <details>
+            <summary><h2 id="aboutTitle">About the numbers</h2></summary>
+            <div id="about"></div>
+          </details>
+        </section>
+
+        <footer class="pagefoot">
+          <button type="button" class="link-btn" id="newCrowd">Meet a different crowd</button>
+          <button type="button" class="link-btn" id="showIntro">How to play</button>
+          <button type="button" class="link-btn" id="share">Copy share link</button>
+          <a href="../../index.html">All games</a>
+        </footer>
+      </main>
+
+      <aside class="panel" id="panel" aria-label="Budget controls">
+        <button type="button" class="sheet-handle" id="sheetHandle" aria-expanded="false" aria-controls="panelBody">
+          <span class="sheet-grip" aria-hidden="true"></span>
+          <span class="sheet-title">Change the budget</span>
+          <span class="sheet-deficit" id="sheetDeficit"></span>
+        </button>
+        <div class="panel-body" id="panelBody">
+          <div class="panel-head">
+            <div class="tabs" role="tablist" aria-label="Controls">
+              <button type="button" role="tab" id="tabSpend" aria-controls="spendPane" aria-selected="true">Spending</button>
+              <button type="button" role="tab" id="tabRev" aria-controls="revPane" aria-selected="false">Taxes &amp; revenue</button>
+            </div>
+            <button type="button" class="reset-all" id="resetAll">Reset all</button>
+          </div>
+          <div class="pane" id="spendPane" role="tabpanel" aria-labelledby="tabSpend"></div>
+          <div class="pane" id="revPane" role="tabpanel" aria-labelledby="tabRev" hidden></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="card-layer" id="cardLayer" hidden>
+    <div class="person-card" id="personCard" role="dialog" aria-modal="false" aria-labelledby="pcName" tabindex="-1"></div>
+  </div>
+
+  <dialog class="modal" id="introDialog" aria-labelledby="introTitle">
+    <h2 id="introTitle">Meet the crowd</h2>
+    <p>Every little person on the Mall stands for <strong id="introScale">a million</strong> real American adults: a nurse, a farmer, a soldier, a retiree, a student.</p>
+    <ul>
+      <li>Close the federal deficit with the spending and tax controls.</li>
+      <li>Watch who reacts. Smiles and balloons mean better off; crossed arms, signs and finally torches mean worse off.</li>
+      <li>Hover or tap anyone to hear why. Select them for the full story, with links to the controls that moved them.</li>
+      <li>Rearrange the crowd to count who is upset, by job, age, income or gripe.</li>
+    </ul>
+    <form method="dialog"><button class="primary" value="ok">Start</button></form>
+  </dialog>
+
+  <dialog class="modal report" id="reportDialog" aria-labelledby="reportTitle">
+    <div id="reportBody"></div>
+    <form method="dialog"><button class="primary" value="ok">Back to the Mall</button></form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="../../shared/data.js"></script>
+  <script src="../../shared/model.js"></script>
+  <script src="people.js"></script>
+  <script src="crowd-model.js"></script>
+  <script src="crowd.js"></script>
+</body>
+</html>

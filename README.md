@@ -16,6 +16,7 @@ offline, and unchanged when hosted on GitHub Pages.
 | Game | Folder | What it is |
 |------|--------|------------|
 | The Ledger | `games/ledger/` | Dashboard: every budget line and tax lever, eight example households, voter blocs, three scorecards, ten-year debt outlook |
+| The Crowd | `games/crowd/` | A crowd of 260 little people on the National Mall, each standing for about a million adults, who cheer, frown, protest or grab torches as you change the budget, and say why |
 
 New games go side by side in `games/<name>/`; see `CLAUDE.md` for the rules.
 
@@ -78,6 +79,7 @@ deficit, and be winnable (including the lens challenges, using plans found by se
 | `shared/data.js` | `BUDGET_DATA`: every number and every word of content |
 | `shared/model.js` | `BudgetModel`: pure calculation, validation, share codes, formatting |
 | `games/ledger/app.js` | Builds the page from the data and updates it as you play |
+| `games/crowd/` | The Crowd: `people.js` (crowd content), `crowd-model.js` (simulation), `crowd.js` (canvas crowd and controls), `index.html`, `style.css`; see its README |
 | `tests/` | `node:test` suites, the fixture dataset, and `index.js` (lets `node --test tests/` find the suites) |
 | `CLAUDE.md` | The data schema and engine contract |
 
