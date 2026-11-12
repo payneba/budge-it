@@ -72,6 +72,9 @@ button { font: inherit; color: inherit; }
   padding: 10px 18px;
   background: var(--card);
   border-bottom: 1px solid var(--rule);
+  /* always on screen: the deficit is the point of the game */
+  position: sticky; top: 0; z-index: 45;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
 }
 .brand { display: flex; flex-direction: column; }
 .home { font-size: 0.8rem; color: var(--muted); text-decoration: none; }
@@ -79,10 +82,17 @@ button { font: inherit; color: inherit; }
 .brand h1 { font-size: 1.7rem; letter-spacing: -0.01em; }
 
 .score { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: baseline; }
-.deficit { display: flex; flex-direction: column; grid-row: span 3; }
-.deficit-label { font-size: 0.8rem; color: var(--muted); }
-.deficit-num { font-family: var(--display); font-size: 1.65rem; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.progress { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--rule) 70%, transparent); overflow: hidden; align-self: end; }
+.deficit {
+  display: flex; flex-direction: column; grid-row: span 3; align-self: center;
+  padding: 4px 16px 6px; border-radius: 10px; border: 2px solid var(--bad);
+  background: color-mix(in srgb, var(--bad) 12%, var(--card));
+  transition: background 0.3s, border-color 0.3s;
+}
+.deficit[data-state="good"] { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--card)); }
+.deficit-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bad); }
+.deficit[data-state="good"] .deficit-label { color: var(--good); }
+.deficit-num { font-family: var(--display); font-size: clamp(2rem, 3.4vw, 2.9rem); line-height: 1.05; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.progress { height: 14px; border-radius: 7px; background: color-mix(in srgb, var(--rule) 70%, transparent); overflow: hidden; align-self: end; }
 .progress-fill { display: block; height: 100%; width: 0; background: var(--good); transition: width 0.3s; }
 .progress-label, .inout { margin: 0; font-size: 0.8rem; color: var(--muted); }
 
@@ -227,7 +237,7 @@ details > summary h2 { display: inline; }
 .panel {
   /* clip, not hidden: a hidden box can still be scrolled by focus()/scrollIntoView(),
      which pushed the controls out of sight with no way to scroll back. */
-  position: sticky; top: 0; height: 100vh; overflow: hidden; overflow: clip;
+  position: sticky; top: var(--topbar-h, 0px); height: calc(100vh - var(--topbar-h, 0px)); overflow: hidden; overflow: clip;
   background: var(--card); border-left: 1px solid var(--rule); display: flex; flex-direction: column;
 }
 .sheet-handle { display: none; }
@@ -380,7 +390,10 @@ input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent
   .topbar { grid-template-columns: 1fr; gap: 6px; padding: 8px 12px; }
   .brand { flex-direction: row; align-items: baseline; gap: 10px; }
   .brand h1 { font-size: 1.35rem; }
-  .deficit-num { font-size: 1.35rem; }
+  .deficit-num { font-size: 1.9rem; }
+  .deficit { padding: 2px 12px 4px; }
+  /* phones: the header scrolls away, so the always-visible sheet handle carries the deficit */
+  .topbar { position: static; box-shadow: none; }
   .layout { display: block; }
   .main { padding: 8px 10px 30px; }
   .canvas-wrap { height: clamp(300px, 62vh, 560px); }
@@ -391,7 +404,7 @@ input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent
   .boards { grid-template-columns: 1fr; }
   .report-cols { grid-template-columns: 1fr; }
   .panel {
-    position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: auto; z-index: 40;
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: auto; z-index: 46;
     border-left: 0; border-top: 1px solid var(--rule); border-radius: 14px 14px 0 0;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.18);
   }
@@ -401,7 +414,7 @@ input[type="range"] { width: 100%; margin: 6px 0 2px; accent-color: var(--accent
   }
   .sheet-grip { grid-column: 1 / -1; justify-self: center; width: 40px; height: 4px; border-radius: 2px; background: var(--rule); margin-bottom: 4px; }
   .sheet-title { font-family: var(--display); font-weight: 700; font-size: 1.05rem; }
-  .sheet-deficit { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sheet-deficit { font-family: var(--display); font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .panel-body { display: none; height: 50vh; flex: none; }
   body.sheet-open .panel-body { display: flex; }
   .card-layer { align-items: flex-end; padding: 0; }

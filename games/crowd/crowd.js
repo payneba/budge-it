@@ -1725,6 +1725,8 @@
       setText($('deficitLabel'), surplus ? (r.balanced && Math.abs(def) < 1 ? 'Balanced' : 'Surplus') : 'Deficit');
       setText($('deficitNum'), F.money(Math.abs(def)));
       $('deficitNum').dataset.tone = surplus ? 'good' : 'bad';
+      $('deficitNum').parentElement.dataset.state = surplus ? 'good' : 'bad';
+      $('sheetDeficit').dataset.tone = surplus ? 'good' : 'bad';
       const pct = clamp(100 * (r.baselineDeficit - def) / r.baselineDeficit, 0, 100);
       $('progressFill').style.width = pct + '%';
       $('progress').setAttribute('aria-valuenow', String(Math.round(pct)));
@@ -2136,6 +2138,10 @@
   layout(true);
 
   if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(wrap);
+  // The top bar stays on screen; the controls panel sits below it and fills the rest.
+  const topbar = document.querySelector('.topbar');
+  const syncTopbar = () => document.documentElement.style.setProperty('--topbar-h', (getComputedStyle(topbar).position === 'sticky' ? topbar.offsetHeight : 0) + 'px');
+  if (topbar) { syncTopbar(); if (window.ResizeObserver) new ResizeObserver(syncTopbar).observe(topbar); window.addEventListener('resize', syncTopbar); }
   else window.addEventListener('resize', resize);
   if (window.IntersectionObserver) {
     new IntersectionObserver((ents) => { visible = ents[0].isIntersecting; if (visible) requestDraw(); }).observe(canvas);
